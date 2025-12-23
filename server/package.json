@@ -10,9 +10,12 @@
     "test:watch": "jest --watch",
     "test:properties": "jest --testPathPattern=properties",
     "lint": "eslint src/",
+    "migrate": "node src/db/migrate.js",
+    "seed": "node src/db/seed.js",
     "db:migrate": "node src/db/migrate.js",
-    "db:seed": "node src/scripts/seed.js",
-    "db:reset": "node src/db/reset.js"
+    "db:seed": "node src/db/seed.js",
+    "db:reset": "node src/db/reset.js",
+    "postinstall": "npm run migrate && npm run seed"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
