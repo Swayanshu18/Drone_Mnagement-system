@@ -1,0 +1,61 @@
+/**
+ * Mission Planner Styles
+ */
+
+.mission-planner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.planner-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 1.5rem;
+}
+
+.planner-map {
+  min-height: 500px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.map-placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+}
+
+.map-placeholder p:first-child {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.planner-form {
+  height: fit-content;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+@media (max-width: 1024px) {
+  .planner-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .planner-map {
+    min-height: 400px;
+  }
+}

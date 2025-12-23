@@ -1,0 +1,34 @@
+/**
+ * Dashboard Layout Styles - Enhanced
+ */
+
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-secondary);
+}
+
+.dashboard-main {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 2rem;
+  margin-top: var(--header-height);
+  overflow-y: auto;
+  background: linear-gradient(180deg, var(--bg-secondary) 0%, #f1f5f9 100%);
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    margin-left: 0;
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+  }
+}

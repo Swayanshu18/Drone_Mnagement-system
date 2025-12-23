@@ -1,0 +1,157 @@
+.mission-monitor {
+    display: flex;
+    height: calc(100vh - 64px);
+}
+
+.monitor-sidebar {
+    width: 350px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-right: 1px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+}
+
+.monitor-map {
+    flex: 1;
+}
+
+.mission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.mission-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+.badge-planned {
+    background: #6c757d;
+    color: white;
+}
+
+.badge-in_progress {
+    background: #007bff;
+    color: white;
+}
+
+.badge-completed {
+    background: #28a745;
+    color: white;
+}
+
+.badge-aborted {
+    background: #dc3545;
+    color: white;
+}
+
+.badge-paused {
+    background: #ffc107;
+    color: black;
+}
+
+.telemetry-panel {
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.telemetry-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.metric {
+    text-align: center;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+.controls-panel {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.back-btn {
+    margin-top: auto;
+    text-align: left;
+    padding: 0;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+
+
+.progress-bar-container {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 1rem 0;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff, #28a745);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    text-align: center;
+    font-weight: bold;
+    color: #495057;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+.error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-size: 1.2rem;
+    color: #dc3545;
+}
