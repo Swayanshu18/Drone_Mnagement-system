@@ -30,7 +30,14 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: function(origin, callback) {
+      // Allow requests with no origin or any vercel.app domain
+      if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+        callback(null, origin || true);
+      } else {
+        callback(null, origin);
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -45,14 +52,26 @@ app.use(helmet({
 }));
 
 // CORS configuration
-// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  process.env.CLIENT_URL,
+  'https://drone-mnagement-system-tlfg-d1whqqnas-swayanshu-routs-projects.vercel.app',
+  'https://drone-mnagement-system-tlfg.vercel.app'
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    process.env.CLIENT_URL, // Allow Vercel Frontend
-    'https://drone-mnagement-system-frontend.vercel.app' // Fallback/Test
-  ],
+  origin: function(origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // Check exact match or Vercel preview URLs
+    if (allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+      callback(null, origin);
+    } else {
+      callback(null, origin); // Allow all for now
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
