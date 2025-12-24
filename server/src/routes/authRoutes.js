@@ -24,7 +24,14 @@ router.post('/login', async (req, res, next) => {
 
     const result = await authService.login(email, password);
 
-    // Standardize response format to match frontend expectation
+    // Set secure cookie
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: true, // Always true for cross-site
+      sameSite: 'none', // Required for cross-site
+      maxAge: 24 * 60 * 60 * 1000 // 1 day
+    });
+
     res.json({
       access_token: result.token,
       refresh_token: result.refreshToken,
@@ -41,9 +48,11 @@ router.post('/login', async (req, res, next) => {
  * @access  Private
  */
 router.post('/logout', (req, res) => {
-  // Since we are using stateless JWTs on client side, 
-  // the client just needs to discard the token.
-  // If we had a blacklist, we would add the token here.
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none'
+  });
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
