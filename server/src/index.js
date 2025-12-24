@@ -88,13 +88,17 @@ app.use(errorHandler);
 // Initialize Socket.IO handlers
 initializeSocket(io);
 
-// Start server
+// Start server logic
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 WebSocket server ready`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Only listen if not in Vercel environment
+if (!process.env.VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 WebSocket server ready`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+}
 
-module.exports = { app, server, io };
+// Export app for Vercel
+module.exports = app;

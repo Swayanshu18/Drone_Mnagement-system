@@ -1,0 +1,23 @@
+{
+  "name": "drone-survey-management",
+  "version": "1.0.0",
+  "description": "Drone Survey Management System - Plan, manage, and monitor autonomous drone surveys",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "vercel-build": "cd client && npm install && npm run build",
+    "test": "cd server && npm test",
+    "db:migrate": "cd server && npm run migrate",
+    "db:seed": "cd server && npm run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
