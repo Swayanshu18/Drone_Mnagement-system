@@ -9,7 +9,7 @@ A full-stack web application for managing autonomous drone survey operations acr
 
 ## 🚀 Live Demo
 
-**Application URL:** [Your Hosted URL Here]
+**Application URL:** (https://drone-mnagement-system-tlfg-9wav36zls-swayanshu-routs-projects.vercel.app/)
 
 **Demo Credentials:**
 - Email: `admin@dronesurvey.com`
