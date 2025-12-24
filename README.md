@@ -576,30 +576,7 @@ Waypoint     | 4-8       | Minimal  | Point inspection
 
 ---
 
-## 📄 License
 
-This project is created for the FlytBase Design Challenge.
 
 ---
 
-## 👨‍💻 Developer
-
-**Swayanshu Rout**
-- GitHub: [Your GitHub Profile]
-- Email: [Your Email]
-- LinkedIn: [Your LinkedIn]
-
----
-
-## 🙏 Acknowledgments
-
-- **FlytBase** for the design challenge opportunity
-- **Kiro IDE** for AI-powered development assistance
-- **Claude AI** for code generation and problem-solving
-- **OpenStreetMap** for free map tiles
-- **Leaflet.js** for excellent mapping library
-- **Socket.IO** for real-time communication
-
----
-
-**Built with ❤️ for FlytBase Design Challenge 2024**
