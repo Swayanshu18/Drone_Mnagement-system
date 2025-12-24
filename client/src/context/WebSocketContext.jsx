@@ -10,7 +10,7 @@ import { useAuth } from '../hooks/useAuth';
 
 export const WebSocketContext = createContext(null);
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? 'https://drone-mnagement-system.onrender.com' : 'http://localhost:5001');
 
 export function WebSocketProvider({ children }) {
   const [isConnected, setIsConnected] = useState(false);
@@ -86,7 +86,7 @@ export function WebSocketProvider({ children }) {
 
   // Subscribe to an event
   const subscribe = useCallback((event, callback) => {
-    if (!socketRef.current) return () => {};
+    if (!socketRef.current) return () => { };
 
     socketRef.current.on(event, callback);
 
