@@ -1,33 +1,52 @@
 /**
  * Mission Monitor Component
  * 
- * Real-time mission monitoring with flight simulation.
- * Features: Play, Pause, Stop, Resume controls with animated drone movement.
+ * Real-time mission monitoring with intelligent flight simulation.
+ * Features:
+ * - Mission-based flight path generation (Grid, Crosshatch, Perimeter, Hatch, Waypoint)
+ * - Realistic drone physics (acceleration, deceleration, turning)
+ * - Battery simulation with charging logic
+ * - Speed control with ETA updates
+ * - Return-to-Home (RTH) functionality
+ * - Real-time telemetry display
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Polygon, Polyline, Marker, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Polyline, Marker, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../../services/api';
+import useFlightSimulation, { SpeedPresets } from '../../hooks/useFlightSimulation';
+import { MissionType } from '../../services/flightSimulation';
 import './MissionMonitor.css';
 
-// Custom drone icon
-const droneIcon = new L.DivIcon({
+// Custom drone icon with rotation support and animation
+const createDroneIcon = (heading = 0, isFlying = false) => new L.DivIcon({
   className: 'drone-marker',
-  html: `<div class="drone-icon">🚁</div>`,
+  html: `<div class="drone-icon ${isFlying ? 'flying' : ''}" style="transform: rotate(${heading}deg)">
+    <div class="drone-body">🚁</div>
+    ${isFlying ? '<div class="propeller-effect"></div>' : ''}
+  </div>`,
   iconSize: [40, 40],
   iconAnchor: [20, 20]
 });
 
+// Home base icon
+const homeIcon = new L.DivIcon({
+  className: 'home-marker',
+  html: `<div class="home-icon">🏠</div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15]
+});
+
 // Component to update map view
-function MapUpdater({ center }) {
+function MapUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.setView(center, map.getZoom());
+      map.setView(center, zoom || map.getZoom());
     }
-  }, [center, map]);
+  }, [center, zoom, map]);
   return null;
 }
 
@@ -37,24 +56,22 @@ function MissionMonitor() {
   const [mission, setMission] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // Simulation state
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [simulationProgress, setSimulationProgress] = useState(0);
-  const [currentPosition, setCurrentPosition] = useState(null);
-  const [flightPath, setFlightPath] = useState([]);
-  const [completedPath, setCompletedPath] = useState([]);
-  const [telemetry, setTelemetry] = useState({
-    battery: 100,
-    altitude: 0,
-    speed: 0,
-    distance: 0
-  });
-  
-  const simulationRef = useRef(null);
-  const pathIndexRef = useRef(0);
-  const [simulationSpeed, setSimulationSpeed] = useState(1); // 1x, 2x, 4x speed
+
+  // Use the flight simulation hook
+  const simulation = useFlightSimulation(mission);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('Mission data:', mission);
+    console.log('Simulation state:', {
+      isInitialized: simulation.isInitialized,
+      canFly: simulation.canFly,
+      flightPathLength: simulation.flightPath?.length,
+      battery: simulation.battery,
+      droneState: simulation.droneState,
+      missionState: simulation.missionState
+    });
+  }, [mission, simulation.isInitialized, simulation.canFly, simulation.flightPath]);
 
   // Fetch mission data
   useEffect(() => {
@@ -62,289 +79,94 @@ function MissionMonitor() {
       try {
         setLoading(true);
         const response = await api.get(`/missions/${id}`);
-        setMission(response.data);
+        const missionData = response.data;
         
-        // Generate flight path from survey area
-        if (response.data.survey_area) {
-          const path = generateFlightPath(response.data);
-          setFlightPath(path);
-          if (path.length > 0) {
-            setCurrentPosition(path[0]);
-          }
+        // Merge parameters into mission object for simulation
+        if (missionData.parameters) {
+          missionData.altitude = missionData.parameters.altitude || 50;
+          missionData.overlap_percentage = missionData.parameters.overlap_percentage || 70;
         }
+        
+        setMission(missionData);
       } catch (err) {
         console.error('Error fetching mission:', err);
-        setError('Failed to load mission');
+        // Fallback to demo mission for testing
+        const demoMission = {
+          id: id,
+          name: 'Demo Mission - SF Area',
+          status: 'planned',
+          flight_pattern: 'grid',
+          altitude: 50,
+          overlap_percentage: 70,
+          survey_area: {
+            type: 'Polygon',
+            coordinates: [[
+              [-122.4200, 37.7740],
+              [-122.4180, 37.7740],
+              [-122.4180, 37.7760],
+              [-122.4200, 37.7760],
+              [-122.4200, 37.7740]
+            ]]
+          }
+        };
+        setMission(demoMission);
+        console.log('Using demo mission data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchMission();
-    
-    return () => {
-      // Cleanup simulation on unmount
-      if (simulationRef.current) {
-        clearInterval(simulationRef.current);
-      }
-    };
   }, [id]);
 
-  // Interpolate points between two coordinates for smooth animation
-  const interpolatePoints = (start, end, numPoints = 10) => {
-    const points = [];
-    for (let i = 0; i <= numPoints; i++) {
-      const t = i / numPoints;
-      points.push([
-        start[0] + (end[0] - start[0]) * t,
-        start[1] + (end[1] - start[1]) * t
-      ]);
+  // Handle mission type change
+  const handleMissionTypeChange = useCallback((type) => {
+    if (simulation.missionState === simulation.MissionState.IN_PROGRESS) {
+      return; // Can't change during flight
     }
-    return points;
-  };
+    simulation.setMissionType(type);
+  }, [simulation]);
 
-  // Generate flight path based on pattern
-  const generateFlightPath = (missionData) => {
-    const surveyArea = missionData.survey_area;
-    if (!surveyArea || !surveyArea.coordinates) return [];
-    
-    const coords = surveyArea.coordinates[0];
-    const pattern = missionData.flight_pattern || 'crosshatch';
-    
-    // Get bounding box
-    const lats = coords.map(c => c[1]);
-    const lngs = coords.map(c => c[0]);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
-    
-    const waypoints = [];
-    const overlap = (missionData.overlap_percentage || 70) / 100;
-    const spacing = 0.0003 * (1 - overlap + 0.3); // Adjust spacing based on overlap
-    
-    if (pattern === 'grid') {
-      // GRID PATTERN: Horizontal lines only (lawn mower pattern)
-      let direction = 1;
-      let lastPoint = null;
-      
-      for (let lat = minLat; lat <= maxLat; lat += spacing) {
-        const startPoint = [lat, direction === 1 ? minLng : maxLng];
-        const endPoint = [lat, direction === 1 ? maxLng : minLng];
-        
-        // Add transition from last point if exists
-        if (lastPoint) {
-          waypoints.push(...interpolatePoints(lastPoint, startPoint, 5));
-        }
-        
-        // Add the horizontal line
-        waypoints.push(...interpolatePoints(startPoint, endPoint, 20));
-        
-        lastPoint = endPoint;
-        direction *= -1;
-      }
-    } else if (pattern === 'crosshatch') {
-      // CROSSHATCH PATTERN: Horizontal + Vertical lines (double coverage)
-      let direction = 1;
-      let lastPoint = null;
-      
-      // First pass: Horizontal lines
-      for (let lat = minLat; lat <= maxLat; lat += spacing) {
-        const startPoint = [lat, direction === 1 ? minLng : maxLng];
-        const endPoint = [lat, direction === 1 ? maxLng : minLng];
-        
-        if (lastPoint) {
-          waypoints.push(...interpolatePoints(lastPoint, startPoint, 5));
-        }
-        
-        waypoints.push(...interpolatePoints(startPoint, endPoint, 20));
-        lastPoint = endPoint;
-        direction *= -1;
-      }
-      
-      // Transition to vertical pass
-      const verticalStart = [minLat, minLng];
-      if (lastPoint) {
-        waypoints.push(...interpolatePoints(lastPoint, verticalStart, 10));
-      }
-      
-      // Second pass: Vertical lines
-      direction = 1;
-      lastPoint = verticalStart;
-      
-      for (let lng = minLng; lng <= maxLng; lng += spacing) {
-        const startPoint = [direction === 1 ? minLat : maxLat, lng];
-        const endPoint = [direction === 1 ? maxLat : minLat, lng];
-        
-        if (lastPoint) {
-          waypoints.push(...interpolatePoints(lastPoint, startPoint, 5));
-        }
-        
-        waypoints.push(...interpolatePoints(startPoint, endPoint, 20));
-        lastPoint = endPoint;
-        direction *= -1;
-      }
-    } else if (pattern === 'perimeter') {
-      // PERIMETER PATTERN: Follow the polygon boundary multiple times
-      const numLaps = 3; // Number of perimeter laps
-      
-      for (let lap = 0; lap < numLaps; lap++) {
-        // Shrink the perimeter slightly for each lap (inward spiral effect)
-        const shrinkFactor = 1 - (lap * 0.15);
-        const centerLat = (minLat + maxLat) / 2;
-        const centerLng = (minLng + maxLng) / 2;
-        
-        const shrunkCoords = coords.map(coord => {
-          const lat = centerLat + (coord[1] - centerLat) * shrinkFactor;
-          const lng = centerLng + (coord[0] - centerLng) * shrinkFactor;
-          return [lat, lng];
-        });
-        
-        // Add interpolated points along the perimeter
-        for (let i = 0; i < shrunkCoords.length; i++) {
-          const current = shrunkCoords[i];
-          const next = shrunkCoords[(i + 1) % shrunkCoords.length];
-          waypoints.push(...interpolatePoints(current, next, 15));
-        }
-      }
-    }
-    
-    return waypoints;
-  };
+  // Handle speed change
+  const handleSpeedChange = useCallback((speed) => {
+    simulation.setSpeed(speed);
+  }, [simulation]);
 
-  // Start simulation
-  const startSimulation = useCallback(() => {
-    if (flightPath.length === 0) return;
-    
-    setIsSimulating(true);
-    setIsPaused(false);
-    pathIndexRef.current = 0;
-    setCompletedPath([]);
-    setSimulationProgress(0);
-    setTelemetry(prev => ({ ...prev, battery: 100, altitude: mission?.altitude || 50 }));
-    
-    const speed = mission?.speed || 10; // m/s
-    const interval = 100 / simulationSpeed; // Adjust interval based on speed multiplier
-    
-    simulationRef.current = setInterval(() => {
-      pathIndexRef.current += 1;
-      
-      if (pathIndexRef.current >= flightPath.length) {
-        // Simulation complete
-        clearInterval(simulationRef.current);
-        setIsSimulating(false);
-        setSimulationProgress(100);
-        setTelemetry(prev => ({ ...prev, speed: 0 }));
-        return;
-      }
-      
-      const newPosition = flightPath[pathIndexRef.current];
-      setCurrentPosition(newPosition);
-      setCompletedPath(flightPath.slice(0, pathIndexRef.current + 1));
-      
-      // Update progress
-      const progress = Math.round((pathIndexRef.current / flightPath.length) * 100);
-      setSimulationProgress(progress);
-      
-      // Update telemetry
-      setTelemetry(prev => ({
-        battery: Math.max(0, 100 - (progress * 0.3)), // Battery drains
-        altitude: mission?.altitude || 50,
-        speed: (speed * simulationSpeed) + (Math.random() * 2 - 1), // Adjusted for sim speed
-        distance: (pathIndexRef.current * 0.01).toFixed(2)
-      }));
-      
-    }, interval);
-  }, [flightPath, mission, simulationSpeed]);
-
-  // Pause simulation
-  const pauseSimulation = useCallback(() => {
-    if (simulationRef.current) {
-      clearInterval(simulationRef.current);
-      simulationRef.current = null;
-    }
-    setIsPaused(true);
-    setTelemetry(prev => ({ ...prev, speed: 0 }));
-  }, []);
-
-  // Resume simulation
-  const resumeSimulation = useCallback(() => {
-    if (!isPaused || flightPath.length === 0) return;
-    
-    setIsPaused(false);
-    const speed = mission?.speed || 10;
-    const interval = 100 / simulationSpeed;
-    
-    simulationRef.current = setInterval(() => {
-      pathIndexRef.current += 1;
-      
-      if (pathIndexRef.current >= flightPath.length) {
-        clearInterval(simulationRef.current);
-        setIsSimulating(false);
-        setSimulationProgress(100);
-        setTelemetry(prev => ({ ...prev, speed: 0 }));
-        return;
-      }
-      
-      const newPosition = flightPath[pathIndexRef.current];
-      setCurrentPosition(newPosition);
-      setCompletedPath(flightPath.slice(0, pathIndexRef.current + 1));
-      
-      const progress = Math.round((pathIndexRef.current / flightPath.length) * 100);
-      setSimulationProgress(progress);
-      
-      setTelemetry(prev => ({
-        battery: Math.max(0, 100 - (progress * 0.3)),
-        altitude: mission?.altitude || 50,
-        speed: (speed * simulationSpeed) + (Math.random() * 2 - 1),
-        distance: (pathIndexRef.current * 0.01).toFixed(2)
-      }));
-      
-    }, interval);
-  }, [isPaused, flightPath, mission, simulationSpeed]);
-
-  // Stop simulation
-  const stopSimulation = useCallback(() => {
-    if (simulationRef.current) {
-      clearInterval(simulationRef.current);
-      simulationRef.current = null;
-    }
-    setIsSimulating(false);
-    setIsPaused(false);
-    pathIndexRef.current = 0;
-    setSimulationProgress(0);
-    setCompletedPath([]);
-    if (flightPath.length > 0) {
-      setCurrentPosition(flightPath[0]);
-    }
-    setTelemetry({ battery: 100, altitude: 0, speed: 0, distance: 0 });
-  }, [flightPath]);
-
-  // Calculate map center
-  const getMapCenter = () => {
-    if (currentPosition) return currentPosition;
+  // Get map center
+  const getMapCenter = useCallback(() => {
+    if (simulation.position) return simulation.position;
     if (mission?.survey_area?.coordinates?.[0]?.[0]) {
       const coord = mission.survey_area.coordinates[0][0];
       return [coord[1], coord[0]];
     }
-    return [37.7749, -122.4194]; // Default SF
-  };
+    return [37.7749, -122.4194];
+  }, [simulation.position, mission]);
 
   // Get survey area coordinates for polygon
-  const getSurveyAreaCoords = () => {
+  const getSurveyAreaCoords = useCallback(() => {
     if (!mission?.survey_area?.coordinates?.[0]) return [];
     return mission.survey_area.coordinates[0].map(coord => [coord[1], coord[0]]);
-  };
+  }, [mission]);
 
-  // Format time remaining
-  const getTimeRemaining = () => {
-    if (!isSimulating || simulationProgress >= 100) return '00:00';
-    const remaining = flightPath.length - pathIndexRef.current;
-    const seconds = Math.round(remaining * 0.1);
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+  // Get battery color based on level
+  const getBatteryColor = useCallback((level) => {
+    if (level <= 10) return '#e74c3c';
+    if (level <= 20) return '#f39c12';
+    if (level <= 50) return '#f1c40f';
+    return '#2ecc71';
+  }, []);
+
+  // Get status badge class
+  const getStatusBadgeClass = useCallback(() => {
+    switch (simulation.droneState) {
+      case simulation.DroneState.FLYING: return 'badge-success';
+      case simulation.DroneState.HOVERING: return 'badge-warning';
+      case simulation.DroneState.RETURNING: return 'badge-danger';
+      case simulation.DroneState.CHARGING: return 'badge-info';
+      case simulation.DroneState.READY: return 'badge-success';
+      default: return 'badge-secondary';
+    }
+  }, [simulation.droneState, simulation.DroneState]);
 
   if (loading) {
     return (
@@ -362,7 +184,7 @@ function MissionMonitor() {
       <div className="mission-monitor">
         <div className="error-container">
           <h2>⚠️ {error || 'Mission not found'}</h2>
-          <button className="btn btn-primary" onClick={() => navigate('/missions')}>
+          <button className="btn btn-primary" onClick={() => navigate('/dashboard/missions')}>
             Back to Missions
           </button>
         </div>
@@ -370,28 +192,255 @@ function MissionMonitor() {
     );
   }
 
+  const isFlying = simulation.missionState === simulation.MissionState.IN_PROGRESS;
+  const isPaused = simulation.missionState === simulation.MissionState.PAUSED;
+  const isRTH = simulation.rthTriggered;
+  const isCharging = simulation.droneState === simulation.DroneState.CHARGING;
+
   return (
     <div className="mission-monitor">
       <div className="page-header">
         <div className="header-info">
           <h1>{mission.name}</h1>
-          <div className="header-badges">
-            <span className={`badge badge-${mission.status === 'completed' ? 'success' : mission.status === 'in_progress' ? 'info' : 'warning'}`}>
-              {mission.status?.replace('_', ' ')}
+          <span className={`badge ${getStatusBadgeClass()}`}>
+            {simulation.droneState.toUpperCase()}
+          </span>
+          {isRTH && (
+            <span className="badge badge-danger rth-badge">
+              RTH: {simulation.rthReason}
             </span>
-            {isSimulating && (
-              <span className="badge badge-simulation">
-                🎬 Simulation {isPaused ? 'Paused' : 'Running'}
-              </span>
-            )}
-          </div>
+          )}
         </div>
-        <button className="btn btn-secondary" onClick={() => navigate('/missions')}>
+        <button className="btn btn-secondary" onClick={() => navigate('/dashboard/missions')}>
           ← Back
         </button>
       </div>
 
       <div className="monitor-layout">
+        <div className="monitor-sidebar">
+          {/* Mission Progress */}
+          <div className="card">
+            <h3>Mission Progress</h3>
+            <div className="progress-bar-container">
+              <div 
+                className="progress-bar-fill" 
+                style={{ width: `${simulation.missionProgress}%` }}
+              ></div>
+            </div>
+            <p className="progress-text">{simulation.missionProgress.toFixed(1)}% Complete</p>
+            <p className="time-remaining">
+              Est. remaining: <strong>{simulation.formattedEta}</strong>
+            </p>
+          </div>
+
+          {/* Battery Status */}
+          <div className="card battery-card">
+            <h3>Battery Status</h3>
+            <div className="battery-display">
+              <div className="battery-icon-container">
+                <div 
+                  className="battery-level" 
+                  style={{ 
+                    width: `${simulation.battery}%`,
+                    backgroundColor: getBatteryColor(simulation.battery)
+                  }}
+                ></div>
+                <span className="battery-percentage">{simulation.battery.toFixed(0)}%</span>
+              </div>
+              <span className={`charging-status ${simulation.chargingStatus.status.toLowerCase().replace(' ', '-')}`}>
+                {isCharging && '⚡'} {simulation.chargingStatus.status}
+              </span>
+            </div>
+            {simulation.warnings.length > 0 && (
+              <div className="battery-warnings">
+                {simulation.warnings.map((w, i) => (
+                  <div key={i} className={`warning-item warning-${w.level}`}>
+                    ⚠️ {w.message}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Telemetry */}
+          <div className="card">
+            <h3>Telemetry</h3>
+            <div className="telemetry-grid">
+              <div className="telemetry-item">
+                <span className="telemetry-label">Altitude</span>
+                <span className="telemetry-value">{simulation.altitude.toFixed(1)} m</span>
+              </div>
+              <div className="telemetry-item">
+                <span className="telemetry-label">Speed</span>
+                <span className="telemetry-value">{simulation.currentSpeed.toFixed(1)} m/s</span>
+              </div>
+              <div className="telemetry-item">
+                <span className="telemetry-label">Heading</span>
+                <span className="telemetry-value">{simulation.heading.toFixed(0)}°</span>
+              </div>
+              <div className="telemetry-item">
+                <span className="telemetry-label">Distance</span>
+                <span className="telemetry-value">{(simulation.distanceTraveled / 1000).toFixed(2)} km</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Mission Type Selection */}
+          <div className="card">
+            <h3>Mission Type</h3>
+            <div className="mission-type-selector">
+              {Object.values(MissionType).map((type) => (
+                <button
+                  key={type}
+                  className={`mission-type-btn ${simulation.selectedMissionType === type ? 'active' : ''}`}
+                  onClick={() => handleMissionTypeChange(type)}
+                  disabled={isFlying || isPaused}
+                >
+                  {type === MissionType.GRID && '📐'}
+                  {type === MissionType.CROSSHATCH && '✖️'}
+                  {type === MissionType.PERIMETER && '🔲'}
+                  {type === MissionType.WAYPOINT && '📍'}
+                  {type === MissionType.HATCH && '⬔'}
+                  <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                </button>
+              ))}
+            </div>
+            <p className="mission-type-description">
+              {simulation.selectedMissionType === MissionType.GRID && 'Horizontal lawn-mower pattern for efficient coverage'}
+              {simulation.selectedMissionType === MissionType.CROSSHATCH && 'Horizontal + vertical passes for double coverage'}
+              {simulation.selectedMissionType === MissionType.PERIMETER && 'Spiral inward from boundary for edge surveys'}
+              {simulation.selectedMissionType === MissionType.WAYPOINT && 'Direct point-to-point navigation'}
+              {simulation.selectedMissionType === MissionType.HATCH && 'Diagonal pattern at 45° for terrain coverage'}
+            </p>
+          </div>
+
+          {/* Speed Control */}
+          <div className="card">
+            <h3>Speed Control</h3>
+            <div className="speed-slider-container">
+              <input
+                type="range"
+                min="2"
+                max="20"
+                step="1"
+                value={simulation.targetSpeed}
+                onChange={(e) => handleSpeedChange(Number(e.target.value))}
+                className="speed-slider"
+              />
+              <div className="speed-labels">
+                <span>Slow</span>
+                <span className="speed-value">{simulation.targetSpeed} m/s</span>
+                <span>Fast</span>
+              </div>
+            </div>
+            <div className="speed-presets">
+              <button 
+                className={`preset-btn ${simulation.targetSpeed === SpeedPresets.SLOW ? 'active' : ''}`}
+                onClick={() => handleSpeedChange(SpeedPresets.SLOW)}
+              >
+                🐢 Slow
+              </button>
+              <button 
+                className={`preset-btn ${simulation.targetSpeed === SpeedPresets.NORMAL ? 'active' : ''}`}
+                onClick={() => handleSpeedChange(SpeedPresets.NORMAL)}
+              >
+                🚶 Normal
+              </button>
+              <button 
+                className={`preset-btn ${simulation.targetSpeed === SpeedPresets.FAST ? 'active' : ''}`}
+                onClick={() => handleSpeedChange(SpeedPresets.FAST)}
+              >
+                🏃 Fast
+              </button>
+            </div>
+            <p className="speed-info">
+              Higher speed = faster mission but more battery drain
+            </p>
+          </div>
+
+          {/* Mission Control */}
+          <div className="card">
+            <h3>Mission Control</h3>
+            
+            {/* Debug Info */}
+            {!simulation.canFly && (
+              <div className="debug-info" style={{
+                background: 'rgba(243, 156, 18, 0.2)',
+                padding: '0.75rem',
+                borderRadius: '6px',
+                marginBottom: '0.75rem',
+                fontSize: '0.8rem',
+                color: '#f39c12'
+              }}>
+                <div><strong>Debug Info:</strong></div>
+                <div>Battery: {simulation.battery}%</div>
+                <div>Flight Path: {simulation.flightPath?.length || 0} points</div>
+                <div>Initialized: {simulation.isInitialized ? 'Yes' : 'No'}</div>
+                <div>Can Fly: {simulation.canFly ? 'Yes' : 'No'}</div>
+                <div>Drone State: {simulation.droneState}</div>
+              </div>
+            )}
+            
+            <div className="control-buttons">
+              {!isFlying && !isPaused && !isCharging ? (
+                <button 
+                  className="btn btn-success btn-block btn-start-mission"
+                  onClick={simulation.start}
+                  disabled={!simulation.canFly}
+                  title={!simulation.canFly ? 'Check debug info above' : 'Start the mission simulation'}
+                >
+                  ▶️ Start Mission
+                </button>
+              ) : isCharging ? (
+                <button className="btn btn-info btn-block" disabled>
+                  ⚡ Charging... {simulation.battery.toFixed(0)}%
+                </button>
+              ) : (
+                <>
+                  {isPaused ? (
+                    <button className="btn btn-success" onClick={simulation.resume}>
+                      ▶️ Resume
+                    </button>
+                  ) : (
+                    <button className="btn btn-warning" onClick={simulation.pause}>
+                      ⏸️ Pause
+                    </button>
+                  )}
+                  <button className="btn btn-danger" onClick={simulation.stop}>
+                    ⏹️ Abort
+                  </button>
+                </>
+              )}
+            </div>
+            
+            {/* RTH Button */}
+            {(isFlying || isPaused) && !isRTH && (
+              <button 
+                className="btn btn-rth btn-block"
+                onClick={() => simulation.triggerRTH('manual')}
+              >
+                🏠 Return to Home
+              </button>
+            )}
+
+            {/* Reset Button */}
+            {!isFlying && !isPaused && !isCharging && (
+              <button 
+                className="btn btn-secondary btn-block"
+                onClick={simulation.reset}
+                style={{ marginTop: '0.5rem' }}
+              >
+                🔄 Reset Simulation
+              </button>
+            )}
+
+            <p className="waypoint-count">
+              📍 {simulation.flightPath.length} waypoints
+            </p>
+          </div>
+        </div>
+
+        {/* Map View */}
         <div className="monitor-map">
           <MapContainer
             center={getMapCenter()}
@@ -402,38 +451,38 @@ function MissionMonitor() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <MapUpdater center={currentPosition} />
+            <MapUpdater center={simulation.position} />
             
-            {/* Survey Area Polygon */}
+            {/* Survey Area */}
             {getSurveyAreaCoords().length > 0 && (
               <Polygon
                 positions={getSurveyAreaCoords()}
                 pathOptions={{
                   color: '#3498db',
                   fillColor: '#3498db',
-                  fillOpacity: 0.2,
+                  fillOpacity: 0.15,
                   weight: 2
                 }}
               />
             )}
             
             {/* Planned Flight Path */}
-            {flightPath.length > 0 && (
+            {simulation.flightPath.length > 0 && simulation.flightPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
               <Polyline
-                positions={flightPath}
+                positions={simulation.flightPath}
                 pathOptions={{
                   color: '#95a5a6',
                   weight: 1,
                   dashArray: '5, 5',
-                  opacity: 0.5
+                  opacity: 0.4
                 }}
               />
             )}
             
-            {/* Completed Flight Path */}
-            {completedPath.length > 0 && (
+            {/* Completed Path */}
+            {simulation.completedPath.length > 0 && simulation.completedPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
               <Polyline
-                positions={completedPath}
+                positions={simulation.completedPath}
                 pathOptions={{
                   color: '#2ecc71',
                   weight: 3,
@@ -441,223 +490,78 @@ function MissionMonitor() {
                 }}
               />
             )}
+
+            {/* RTH Path */}
+            {simulation.rthPath.length > 0 && simulation.rthPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
+              <Polyline
+                positions={simulation.rthPath}
+                pathOptions={{
+                  color: '#e74c3c',
+                  weight: 3,
+                  dashArray: '10, 5',
+                  opacity: 0.8
+                }}
+              />
+            )}
+            
+            {/* Home Base Marker */}
+            {simulation.homePosition && isFinite(simulation.homePosition[0]) && isFinite(simulation.homePosition[1]) && (
+              <>
+                <Marker position={simulation.homePosition} icon={homeIcon} />
+                <Circle
+                  center={simulation.homePosition}
+                  radius={20}
+                  pathOptions={{
+                    color: '#3498db',
+                    fillColor: '#3498db',
+                    fillOpacity: 0.2
+                  }}
+                />
+              </>
+            )}
             
             {/* Drone Marker */}
-            {currentPosition && (
-              <Marker position={currentPosition} icon={droneIcon} />
+            {simulation.position && isFinite(simulation.position[0]) && isFinite(simulation.position[1]) && (
+              <Marker 
+                position={simulation.position} 
+                icon={createDroneIcon(simulation.heading, isFlying)} 
+              />
             )}
           </MapContainer>
           
-          {/* Map Legend */}
-          <div className="map-legend">
-            <div className="legend-title">
-              Pattern: <strong>{mission.flight_pattern || 'grid'}</strong>
-            </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{ background: '#3498db' }}></span>
-              Survey Area
-            </div>
-            <div className="legend-item">
-              <span className="legend-color dashed" style={{ background: '#95a5a6' }}></span>
-              Planned Path
-            </div>
-            <div className="legend-item">
-              <span className="legend-color" style={{ background: '#2ecc71' }}></span>
-              Completed Path
-            </div>
-            <div className="legend-item">
-              <span className="legend-icon">🚁</span>
-              Drone Position
-            </div>
-          </div>
-          
-          {/* Pattern Description */}
-          <div className="pattern-info">
-            {mission.flight_pattern === 'grid' && (
-              <span>📐 Grid: Horizontal lawn-mower pattern</span>
+          {/* Status Overlay */}
+          <div className="simulation-overlay">
+            {isFlying && !isPaused && (
+              <span className="status-indicator running">
+                🔴 LIVE
+              </span>
             )}
-            {mission.flight_pattern === 'crosshatch' && (
-              <span>✖️ Crosshatch: Horizontal + Vertical coverage</span>
+            {isPaused && (
+              <span className="status-indicator paused">
+                ⏸️ PAUSED
+              </span>
             )}
-            {mission.flight_pattern === 'perimeter' && (
-              <span>🔲 Perimeter: Boundary spiral pattern</span>
+            {isRTH && (
+              <span className="status-indicator rth">
+                🏠 RTH ACTIVE
+              </span>
             )}
-          </div>
-        </div>
-
-        <div className="monitor-sidebar">
-          {/* Simulation Controls */}
-          <div className="card simulation-card">
-            <div className="card-header">
-              <h3>🎬 Flight Simulation</h3>
-            </div>
-            <div className="card-body">
-              <div className="simulation-controls">
-                {!isSimulating ? (
-                  <button 
-                    className="btn btn-success btn-lg simulation-btn"
-                    onClick={startSimulation}
-                    disabled={flightPath.length === 0}
-                  >
-                    ▶️ Start Simulation
-                  </button>
-                ) : (
-                  <div className="control-row">
-                    {isPaused ? (
-                      <button className="btn btn-success" onClick={resumeSimulation}>
-                        ▶️ Resume
-                      </button>
-                    ) : (
-                      <button className="btn btn-warning" onClick={pauseSimulation}>
-                        ⏸️ Pause
-                      </button>
-                    )}
-                    <button className="btn btn-danger" onClick={stopSimulation}>
-                      ⏹️ Stop
-                    </button>
-                  </div>
-                )}
-                
-                {/* Speed Control */}
-                <div className="speed-control">
-                  <label>Speed: {simulationSpeed}x</label>
-                  <div className="speed-buttons">
-                    <button 
-                      className={`speed-btn ${simulationSpeed === 1 ? 'active' : ''}`}
-                      onClick={() => setSimulationSpeed(1)}
-                    >
-                      1x
-                    </button>
-                    <button 
-                      className={`speed-btn ${simulationSpeed === 2 ? 'active' : ''}`}
-                      onClick={() => setSimulationSpeed(2)}
-                    >
-                      2x
-                    </button>
-                    <button 
-                      className={`speed-btn ${simulationSpeed === 4 ? 'active' : ''}`}
-                      onClick={() => setSimulationSpeed(4)}
-                    >
-                      4x
-                    </button>
-                  </div>
-                </div>
-              </div>
-              {flightPath.length === 0 && (
-                <p className="text-muted text-sm">No survey area defined for this mission</p>
-              )}
-              {flightPath.length > 0 && (
-                <p className="text-muted text-sm" style={{ marginTop: '0.5rem' }}>
-                  📍 {flightPath.length} waypoints generated
-                </p>
-              )}
-            </div>
+            {isCharging && (
+              <span className="status-indicator charging">
+                ⚡ CHARGING
+              </span>
+            )}
+            <span className="speed-indicator">
+              {simulation.currentSpeed.toFixed(1)} m/s
+            </span>
           </div>
 
-          {/* Progress Card */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Mission Progress</h3>
-            </div>
-            <div className="card-body">
-              <div className="progress-display">
-                <div 
-                  className="progress-circle" 
-                  style={{ '--progress': simulationProgress }}
-                >
-                  <span className="progress-value">{simulationProgress}%</span>
-                </div>
-                <div className="progress-bar-container">
-                  <div 
-                    className="progress-bar-fill" 
-                    style={{ width: `${simulationProgress}%` }}
-                  ></div>
-                </div>
-                <p className="text-sm text-muted">
-                  Est. remaining: {getTimeRemaining()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Telemetry Card */}
-          <div className="card">
-            <div className="card-header">
-              <h3>📡 Live Telemetry</h3>
-            </div>
-            <div className="card-body">
-              <div className="telemetry-grid">
-                <div className="telemetry-item">
-                  <span className="telemetry-icon">🔋</span>
-                  <span className="telemetry-label">Battery</span>
-                  <span className={`telemetry-value ${telemetry.battery < 20 ? 'warning' : ''}`}>
-                    {telemetry.battery.toFixed(0)}%
-                  </span>
-                </div>
-                <div className="telemetry-item">
-                  <span className="telemetry-icon">📏</span>
-                  <span className="telemetry-label">Altitude</span>
-                  <span className="telemetry-value">{telemetry.altitude}m</span>
-                </div>
-                <div className="telemetry-item">
-                  <span className="telemetry-icon">💨</span>
-                  <span className="telemetry-label">Speed</span>
-                  <span className="telemetry-value">{telemetry.speed.toFixed(1)} m/s</span>
-                </div>
-                <div className="telemetry-item">
-                  <span className="telemetry-icon">📍</span>
-                  <span className="telemetry-label">Distance</span>
-                  <span className="telemetry-value">{telemetry.distance} km</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mission Details Card */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Mission Details</h3>
-            </div>
-            <div className="card-body">
-              <div className="details-list">
-                <div className="detail-item">
-                  <span className="detail-label">Pattern</span>
-                  <span className="detail-value">{mission.flight_pattern || 'N/A'}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Altitude</span>
-                  <span className="detail-value">{mission.altitude || 50}m</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Speed</span>
-                  <span className="detail-value">{mission.speed || 10} m/s</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Overlap</span>
-                  <span className="detail-value">{mission.overlap_percentage || 70}%</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Sensors</span>
-                  <span className="detail-value">
-                    {Array.isArray(mission.sensors) ? mission.sensors.join(', ') : 'RGB'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Drone Info Card */}
-          {mission.drone_name && (
-            <div className="card">
-              <div className="card-header">
-                <h3>🚁 Assigned Drone</h3>
-              </div>
-              <div className="card-body">
-                <div className="drone-info">
-                  <span className="drone-name">{mission.drone_name}</span>
-                  <span className="drone-model">{mission.drone_model || 'Standard Drone'}</span>
-                </div>
-              </div>
+          {/* Battery Warning Overlay */}
+          {simulation.battery <= 20 && !isCharging && (
+            <div className="battery-warning-overlay">
+              <span className={simulation.battery <= 10 ? 'critical' : 'warning'}>
+                ⚠️ {simulation.battery <= 10 ? 'CRITICAL' : 'LOW'} BATTERY: {simulation.battery.toFixed(0)}%
+              </span>
             </div>
           )}
         </div>

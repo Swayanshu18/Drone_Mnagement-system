@@ -1,15 +1,11 @@
 /**
  * Drone Survey Management System - Main Server Entry Point
- * 
- * This file initializes the Express server with all middleware,
- * routes, and Socket.IO for real-time communication.
  */
 
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const http = require('http');
 const { Server } = require('socket.io');
 
@@ -30,69 +26,16 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: function(origin, callback) {
-      // Allow all Vercel preview URLs and localhost
-      if (!origin || 
-          origin.includes('localhost') || 
-          origin.includes('vercel.app') ||
-          origin.includes('drone-mnagement-system')) {
-        callback(null, origin || true);
-      } else {
-        callback(null, origin);
-      }
-    },
-    methods: ['GET', 'POST'],
-    credentials: true
+    origin: '*',
+    methods: ['GET', 'POST']
   }
 });
 
 // Make io accessible to routes
 app.set('io', io);
 
-// Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
-}));
-
-// CORS origin validation function
-const isAllowedOrigin = (origin) => {
-  if (!origin) return true; // Allow requests with no origin (Postman, curl)
-  
-  const allowedPatterns = [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    process.env.CLIENT_URL
-  ].filter(Boolean);
-  
-  // Check exact matches
-  if (allowedPatterns.includes(origin)) return true;
-  
-  // Check if it's a Vercel preview URL for this project
-  if (origin.includes('swayanshu-routs-projects.vercel.app')) return true;
-  if (origin.includes('drone-mnagement-system')) return true;
-  
-  return false;
-};
-
-// CORS configuration
-const corsOptions = {
-  origin: function(origin, callback) {
-    if (isAllowedOrigin(origin)) {
-      callback(null, origin || true);
-    } else {
-      callback(null, origin); // Allow anyway for now
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-
-// Apply CORS
-app.use(cors(corsOptions));
+// Simple CORS - allow all origins (no credentials needed since we use JWT in header)
+app.use(cors());
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -130,10 +73,9 @@ app.use(errorHandler);
 // Initialize Socket.IO handlers
 initializeSocket(io);
 
-// Start server logic
+// Start server
 const PORT = process.env.PORT || 5000;
 
-// Only listen if not in Vercel environment
 if (!process.env.VERCEL) {
   server.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
@@ -142,5 +84,4 @@ if (!process.env.VERCEL) {
   });
 }
 
-// Export app for Vercel
 module.exports = app;

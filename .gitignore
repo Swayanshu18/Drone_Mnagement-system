@@ -57,3 +57,21 @@ server/test_output.txt
 # Large image files (keep only necessary ones)
 hovering-drone-captures-stunning-sunset-over-mountain-forest-generated-by-ai-free-photo.jpg
 image-removebg-preview.png
+R.jpg
+
+# Development/Debug Documentation (keep only main docs)
+ANIMATION_FIX.md
+BATTERY_SYSTEM_EXPLAINED.md
+CIRCULAR_DEPENDENCY_FIX.md
+FLIGHT_PATTERNS.md
+FLIGHT_SIMULATION_FIXES.md
+PATTERN_SELECTION_FIX.md
+START_HERE.md
+TEST_SIMULATION.md
+UI_ENHANCEMENTS.md
+WEBSOCKET_DEBUG.md
+
+# Keep these main documentation files:
+# README.md
+# DOCUMENTATION.md
+# DOCUMENTATION.tex

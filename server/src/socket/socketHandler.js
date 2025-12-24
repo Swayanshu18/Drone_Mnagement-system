@@ -5,6 +5,7 @@
  */
 
 const socketAuth = require('./auth.socket');
+const simulationService = require('../services/simulationService');
 
 /**
  * Initialize Socket.IO event handlers
@@ -20,6 +21,46 @@ const initializeSocket = (io) => {
     socket.on('mission:subscribe', (missionId) => {
       socket.join(`mission:${missionId}`);
       console.log(`Client ${socket.id} subscribed to mission ${missionId}`);
+    });
+
+    // Simulation events
+    socket.on('simulation:start', async (data) => {
+      try {
+        // Support both old format (just missionId) and new format (object with missionId and flightPattern)
+        const missionId = typeof data === 'string' ? data : data.missionId;
+        const flightPattern = typeof data === 'object' ? data.flightPattern : null;
+        
+        console.log(`🚀 Starting simulation for mission ${missionId} from client ${socket.id}`);
+        if (flightPattern) {
+          console.log(`🗺️ Using override flight pattern: ${flightPattern}`);
+        }
+        
+        await simulationService.startSimulation(missionId, io, flightPattern);
+        console.log(`✅ Simulation started successfully for mission ${missionId}`);
+      } catch (err) {
+        console.error(`❌ Simulation start error:`, err.message);
+        socket.emit('error', { message: err.message });
+      }
+    });
+
+    socket.on('simulation:stop', (missionId) => {
+      simulationService.stopSimulation(missionId);
+    });
+
+    socket.on('simulation:pause', (missionId) => {
+      simulationService.pauseSimulation(missionId);
+    });
+
+    socket.on('simulation:resume', (missionId) => {
+      simulationService.resumeSimulation(missionId, io);
+    });
+
+    socket.on('simulation:setSpeed', ({ missionId, speed }) => {
+      simulationService.setSpeed(missionId, speed);
+    });
+
+    socket.on('simulation:rth', (missionId) => {
+      simulationService.triggerRTH(missionId);
     });
 
     // Handle mission unsubscription
@@ -61,11 +102,19 @@ const initializeSocket = (io) => {
  * @param {Object} telemetry - Telemetry data
  */
 const emitTelemetryUpdate = (io, droneId, telemetry) => {
-  io.to(`drone:${droneId}`).emit('telemetry:update', {
+  const room = `drone:${droneId}`;
+  const clientCount = io.sockets.adapter.rooms.get(room)?.size || 0;
+  
+  io.to(room).emit('telemetry:update', {
     droneId,
     ...telemetry,
     timestamp: new Date().toISOString()
   });
+  
+  // Log occasionally to verify emission
+  if (Math.random() < 0.01) { // 1% of the time
+    console.log(`📡 Emitting telemetry to ${clientCount} clients in room ${room}`);
+  }
 };
 
 /**

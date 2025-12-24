@@ -100,9 +100,9 @@ async function seed() {
     };
 
     await client.query(`
-      INSERT INTO missions (id, name, description, drone_id, site_id, status, survey_area, area_size, flight_pattern, progress_percentage, created_by) VALUES
-      ($1, 'SF Facility Inspection', 'Quarterly inspection of main facility', $3, $5, 'completed', $7, 45000, 'crosshatch', 100, $9),
-      ($2, 'NY Perimeter Survey', 'Security perimeter survey', $4, $6, 'planned', $8, 38000, 'perimeter', 0, $9)
+      INSERT INTO missions (id, name, description, drone_id, site_id, status, survey_area, area_size, flight_pattern, progress_percentage, altitude, overlap_percentage, created_by) VALUES
+      ($1, 'SF Facility Inspection', 'Quarterly inspection of main facility', $3, $5, 'completed', $7, 45000, 'crosshatch', 100, 50, 75, $9),
+      ($2, 'NY Perimeter Survey', 'Security perimeter survey', $4, $6, 'planned', $8, 38000, 'perimeter', 0, 40, 70, $9)
     `, [mission1Id, mission2Id, drone1Id, drone4Id, site1Id, site2Id, JSON.stringify(surveyArea1), JSON.stringify(surveyArea2), operatorId]);
 
     console.log('✅ Missions seeded');
