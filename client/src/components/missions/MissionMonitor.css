@@ -1,5 +1,6 @@
 /**
  * Mission Monitor Styles
+ * Enhanced with flight simulation controls
  */
 
 .mission-monitor {
@@ -7,9 +8,35 @@
   margin: 0 auto;
 }
 
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.header-info h1 {
+  margin: 0 0 0.5rem 0;
+}
+
+.header-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.badge-simulation {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .monitor-layout {
   display: grid;
-  grid-template-columns: 1fr 350px;
+  grid-template-columns: 1fr 380px;
   gap: 1.5rem;
 }
 
@@ -19,6 +46,96 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
   overflow: hidden;
+  position: relative;
+}
+
+.monitor-map .leaflet-container {
+  height: 100%;
+  min-height: 600px;
+  border-radius: var(--radius-lg);
+}
+
+/* Drone Marker */
+.drone-marker {
+  background: transparent;
+  border: none;
+}
+
+.drone-icon {
+  font-size: 32px;
+  animation: drone-hover 1s ease-in-out infinite;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes drone-hover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Map Legend */
+.map-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-title {
+  font-size: 0.85rem;
+  color: #333;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 4px;
+  text-transform: capitalize;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.legend-color {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.legend-color.dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    #95a5a6,
+    #95a5a6 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.legend-icon {
+  font-size: 1rem;
+}
+
+/* Pattern Info */
+.pattern-info {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  font-size: 0.85rem;
+  color: #333;
 }
 
 .monitor-sidebar {
@@ -27,6 +144,39 @@
   gap: 1rem;
 }
 
+/* Simulation Card */
+.simulation-card {
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.1), rgba(142, 68, 173, 0.1));
+  border: 1px solid rgba(155, 89, 182, 0.3);
+}
+
+.simulation-card .card-header {
+  border-bottom-color: rgba(155, 89, 182, 0.2);
+}
+
+.simulation-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.simulation-btn {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+}
+
+.control-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.control-row .btn {
+  flex: 1;
+  padding: 0.75rem;
+}
+
+/* Progress Display */
 .progress-display {
   text-align: center;
 }
@@ -36,7 +186,7 @@
   height: 120px;
   border-radius: 50%;
   background: conic-gradient(
-    var(--primary-color) calc(var(--progress, 45) * 3.6deg),
+    var(--primary-color) calc(var(--progress, 0) * 3.6deg),
     var(--bg-tertiary) 0
   );
   display: flex;
@@ -44,6 +194,7 @@
   justify-content: center;
   margin: 0 auto 1rem;
   position: relative;
+  transition: background 0.3s ease;
 }
 
 .progress-circle::before {
@@ -62,6 +213,23 @@
   color: var(--primary-color);
 }
 
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), #2ecc71);
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+
+/* Telemetry Grid */
 .telemetry-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -70,33 +238,121 @@
 
 .telemetry-item {
   text-align: center;
-  padding: 0.75rem;
+  padding: 1rem 0.75rem;
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
+  transition: transform 0.2s ease;
+}
+
+.telemetry-item:hover {
+  transform: translateY(-2px);
+}
+
+.telemetry-icon {
+  display: block;
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .telemetry-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin-bottom: 0.25rem;
 }
 
 .telemetry-value {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.control-buttons {
+.telemetry-value.warning {
+  color: #e74c3c;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Details List */
+.details-list {
   display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
-.control-buttons .btn {
-  flex: 1;
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
 }
 
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  font-weight: 500;
+  color: var(--text-primary);
+  text-transform: capitalize;
+}
+
+/* Drone Info */
+.drone-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.drone-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.drone-model {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Loading & Error States */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
   .monitor-layout {
     grid-template-columns: 1fr;
@@ -105,4 +361,75 @@
   .monitor-map {
     min-height: 400px;
   }
+  
+  .monitor-map .leaflet-container {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .telemetry-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
+/* Speed Control */
+.speed-control {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(155, 89, 182, 0.2);
+}
+
+.speed-control label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.speed-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.speed-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.speed-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.speed-btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+/* Pattern specific colors for completed path */
+.pattern-grid .completed-path {
+  stroke: #2ecc71;
+}
+
+.pattern-crosshatch .completed-path {
+  stroke: #e74c3c;
+}
+
+.pattern-perimeter .completed-path {
+  stroke: #f39c12;
 }

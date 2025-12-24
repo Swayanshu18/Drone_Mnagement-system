@@ -1,6 +1,6 @@
 # Drone Survey Management System
 
-A full-stack web application for managing autonomous drone survey operations across multiple sites. Built for the FlytBase Design Challenge.
+A comprehensive full-stack web application for planning, managing, and monitoring autonomous drone survey operations across multiple global sites. Built for the FlytBase Design Challenge.
 
 ![Drone Survey Management](https://img.shields.io/badge/Status-Live-success)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-green)
@@ -9,83 +9,124 @@ A full-stack web application for managing autonomous drone survey operations acr
 
 ## 🚀 Live Demo
 
-**Application URL:** (https://drone-mnagement-system-tlfg-9wav36zls-swayanshu-routs-projects.vercel.app/)
+**Frontend URL:** `https://drone-mnagement-system-tlfg-9wav36zls-swayanshu-routs-projects.vercel.app/`
+
+**Backend API:** `https://drone-mnagement-system.onrender.com`
 
 **Demo Credentials:**
 - Email: `admin@dronesurvey.com`
 - Password: `password123`
 
-## 📋 Features
+> Note: Backend may take 30-60 seconds to wake up on first request (Render free tier)
 
-### Mission Planning & Configuration
-- Interactive map-based survey area definition (draw polygons)
+---
+
+## 📋 Features Implemented
+
+### ✅ Mission Planning & Configuration
+- Interactive map-based survey area definition using polygon drawing
 - Multiple flight patterns: Crosshatch, Perimeter, Grid
-- Configurable parameters: altitude, speed, overlap percentage
-- Sensor type selection (RGB, Thermal, Multispectral, LiDAR)
+- Configurable parameters: altitude (10-120m), speed (1-20 m/s), overlap (30-90%)
+- Sensor type selection: RGB, Thermal, Multispectral, LiDAR
+- Automatic flight path generation
+- Estimated duration and coverage area calculation
 
-### Fleet Management Dashboard
-- Real-time drone inventory visualization
-- Live status tracking (Available, In-Mission, Maintenance)
+### ✅ Fleet Management Dashboard
+- Organization-wide drone inventory visualization
+- Real-time status tracking (Available, In-Mission, Maintenance, Offline)
 - Battery level monitoring with visual indicators
-- Add/edit drone capabilities
+- Drone specifications display (max flight time, speed, sensors)
+- Add/Edit drone capabilities
 
-### Real-time Mission Monitoring
-- Live drone position on map
-- Mission progress tracking (% complete)
-- Status updates via WebSocket
-- Mission control actions (Start, Pause, Resume, Abort)
+### ✅ Real-time Mission Monitoring
+- Live drone position visualization on map
+- Mission progress tracking (percentage complete)
+- Status updates via WebSocket (starting, in progress, completed, aborted)
+- Mission control actions: Start, Pause, Resume, Abort
+- Estimated time remaining display
 
-### Survey Reporting & Analytics
-- Comprehensive mission statistics
-- Status distribution charts
-- Monthly mission trends
-- Coverage area calculations
+### ✅ Survey Reporting & Analytics
+- Comprehensive mission statistics dashboard
+- Status distribution pie charts
+- Monthly mission trend line charts
+- Total coverage area calculations
+- Flight hours tracking
 
-### Additional Features
-- JWT-based authentication
+### ✅ Additional Features
+- JWT-based authentication system
 - Role-based access control (Admin, Operator, Viewer)
 - Responsive glassmorphic UI design
 - Real-time WebSocket updates
+- User management interface
+
+---
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- React 18 with Vite
-- Leaflet.js with OpenStreetMap (no API key required)
-- Recharts for data visualization
-- Socket.IO client for real-time updates
-- CSS3 with glassmorphic design
+| Technology | Purpose |
+|------------|---------|
+| React 18 | UI component library |
+| Vite | Build tool and dev server |
+| Leaflet.js | Interactive map rendering |
+| OpenStreetMap | Map tiles (no API key required) |
+| Recharts | Data visualization |
+| Socket.IO Client | Real-time communication |
+| Axios | HTTP client |
 
 ### Backend
-- Node.js with Express.js
-- PostgreSQL database
-- Socket.IO for WebSocket communication
-- JWT for authentication
-- bcrypt for password hashing
+| Technology | Purpose |
+|------------|---------|
+| Node.js 18 | JavaScript runtime |
+| Express.js | Web framework |
+| PostgreSQL | Relational database |
+| Socket.IO | WebSocket server |
+| JWT | Authentication |
+| bcryptjs | Password hashing |
+
+### Deployment
+| Service | Purpose |
+|---------|---------|
+| Vercel | Frontend hosting |
+| Render | Backend hosting |
+| Render PostgreSQL | Database hosting |
+
+---
 
 ## 📁 Project Structure
 
 ```
-├── client/                 # React frontend
+drone-survey-management/
+├── client/                     # React frontend
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── context/       # Auth & WebSocket contexts
-│   │   ├── hooks/         # Custom hooks
-│   │   ├── services/      # API services
-│   │   └── styles/        # Global styles
+│   │   ├── components/
+│   │   │   ├── auth/          # Login, ProtectedRoute
+│   │   │   ├── dashboard/     # Layout, Sidebar, Header
+│   │   │   ├── fleet/         # FleetDashboard
+│   │   │   ├── landing/       # LandingPage
+│   │   │   ├── map/           # MapContainer, DrawingTools
+│   │   │   ├── missions/      # MissionPlanner, MissionList, MissionMonitor
+│   │   │   ├── reports/       # ReportsDashboard
+│   │   │   └── users/         # UserManagement
+│   │   ├── context/           # AuthContext, WebSocketContext
+│   │   ├── services/          # API service
+│   │   └── styles/            # Global CSS
 │   └── index.html
-├── server/                 # Express backend
+├── server/                     # Express backend
 │   ├── src/
-│   │   ├── config/        # Database config
-│   │   ├── db/            # Migrations & seeds
-│   │   ├── middleware/    # Auth middleware
-│   │   ├── models/        # Database models
-│   │   ├── routes/        # API routes
-│   │   ├── services/      # Business logic
-│   │   └── socket/        # WebSocket handlers
-│   └── tests/             # Test files
+│   │   ├── config/            # Database configuration
+│   │   ├── db/                # Migrations and seeds
+│   │   ├── middleware/        # Auth, error handling
+│   │   ├── models/            # Data access layer
+│   │   ├── routes/            # API endpoints
+│   │   ├── services/          # Business logic
+│   │   └── socket/            # WebSocket handlers
+│   └── tests/                 # Test files
+├── DOCUMENTATION.md           # Detailed technical documentation
 └── README.md
 ```
+
+---
 
 ## 🚀 Getting Started
 
@@ -94,23 +135,18 @@ A full-stack web application for managing autonomous drone survey operations acr
 - PostgreSQL 15+
 - npm or yarn
 
-### Installation
+### Local Installation
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/drone-survey-management.git
+git clone <repository-url>
 cd drone-survey-management
 ```
 
 2. **Install dependencies**
 ```bash
-# Root dependencies
 npm install
-
-# Client dependencies
 cd client && npm install
-
-# Server dependencies
 cd ../server && npm install
 ```
 
@@ -120,8 +156,9 @@ Create `server/.env`:
 ```env
 PORT=5001
 DATABASE_URL=postgresql://username:password@localhost:5432/drone_survey_db
-JWT_SECRET=your-secret-key
+JWT_SECRET=your-secret-key-here
 JWT_EXPIRES_IN=24h
+NODE_ENV=development
 ```
 
 Create `client/.env`:
@@ -137,55 +174,134 @@ npm run migrate
 npm run seed
 ```
 
-5. **Start the application**
+5. **Start development servers**
 ```bash
-# Terminal 1 - Start server
-cd server && npm run dev
-
-# Terminal 2 - Start client
-cd client && npm run dev
+# From root directory
+npm run dev
 ```
 
 6. **Access the application**
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:5001
 
+---
+
 ## 📊 API Endpoints
 
 ### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | User login |
+| POST | `/api/auth/register` | User registration |
 
 ### Missions
-- `GET /api/missions` - List all missions
-- `POST /api/missions` - Create mission
-- `GET /api/missions/:id` - Get mission details
-- `POST /api/missions/:id/start` - Start mission
-- `POST /api/missions/:id/pause` - Pause mission
-- `POST /api/missions/:id/abort` - Abort mission
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/missions` | List all missions |
+| POST | `/api/missions` | Create new mission |
+| GET | `/api/missions/:id` | Get mission details |
+| POST | `/api/missions/:id/start` | Start mission |
+| POST | `/api/missions/:id/pause` | Pause mission |
+| POST | `/api/missions/:id/resume` | Resume mission |
+| POST | `/api/missions/:id/abort` | Abort mission |
 
 ### Drones
-- `GET /api/drones` - List all drones
-- `POST /api/drones` - Register drone
-- `PUT /api/drones/:id` - Update drone
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/drones` | List all drones |
+| POST | `/api/drones` | Register new drone |
+| PUT | `/api/drones/:id` | Update drone |
 
 ### Reports
-- `GET /api/reports/stats` - Get statistics
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/reports/stats` | Get statistics |
+
+---
 
 ## 🎨 Design Decisions
 
-### Architecture
-- **Separation of Concerns**: Clear separation between frontend, backend, and database layers
-- **RESTful API**: Standard REST conventions for predictable API behavior
-- **Real-time Updates**: WebSocket for live telemetry and status updates
+### Architecture Choices
 
-### Safety Considerations
-- **State Machine**: Mission status transitions follow strict rules
-- **Drone Availability Check**: Prevents assigning busy drones
-- **Role-based Access**: Operators can control, viewers can only observe
+1. **OpenStreetMap over Mapbox**
+   - No API key required
+   - Free and open-source
+   - Sufficient for mission planning visualization
 
-### Trade-offs
-- **Simulated Telemetry**: Real drone integration would require hardware APIs
-- **OpenStreetMap**: Chose over Mapbox for no API key requirement
-- **PostgreSQL**: Chose for reliability and JSON support for GeoJSON data
+2. **PostgreSQL over MongoDB**
+   - Strong relational model for missions/drones/users
+   - Native JSONB support for GeoJSON data
+   - ACID compliance for mission-critical operations
 
+3. **Socket.IO for Real-time**
+   - Bidirectional communication for mission control
+   - Built-in room support for subscriptions
+   - Automatic reconnection handling
+
+4. **React Context over Redux**
+   - Simpler setup for medium-sized application
+   - Sufficient for auth and WebSocket state
+   - Less boilerplate code
+
+### Trade-offs Considered
+
+| Decision | Benefit | Trade-off |
+|----------|---------|-----------|
+| Simulated telemetry | Demonstrates all features | Not real hardware integration |
+| JWT in localStorage | Simple implementation | Less secure than httpOnly cookies |
+| Single database | Simpler deployment | May need sharding at scale |
+
+---
+
+## 🔒 Safety & Adaptability
+
+### Safety Features
+- Mission state machine prevents invalid transitions
+- Drone availability validation before mission start
+- Battery level checks
+- Role-based access control
+
+### Adaptability
+- Modular service architecture
+- Configurable flight parameters
+- Extensible sensor types
+- JSONB fields for flexible data
+
+---
+
+## 🤖 AI Tools Used
+
+This project was developed with assistance from:
+- **Kiro IDE** - AI-powered development environment
+- **Claude AI** - Code generation and architecture decisions
+
+AI tools helped with:
+- Boilerplate code generation
+- CSS styling and responsive design
+- Database schema design
+- WebSocket implementation patterns
+- Documentation generation
+
+---
+
+## 📹 Demo Video
+
+[Link to Demo Video - Add your video link here]
+
+---
+
+## 📄 Additional Documentation
+
+For detailed technical documentation including:
+- Complete API documentation
+- Database schema details
+- Component architecture
+- Deployment guide
+
+See [DOCUMENTATION.md](./DOCUMENTATION.md)
+
+---
+
+## 📄 License
+
+This project is created for the FlytBase Design Challenge.

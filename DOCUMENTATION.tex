@@ -1,0 +1,1069 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+% Page geometry
+\geometry{margin=1in}
+
+% Colors
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\definecolor{primaryblue}{RGB}{41,128,185}
+
+% Code listing style
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single
+}
+\lstset{style=mystyle}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primaryblue,
+    filecolor=magenta,
+    urlcolor=cyan,
+}
+
+% Header and footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Drone Survey Management System}
+\lhead{Technical Documentation}
+\rfoot{Page \thepage}
+
+% Title formatting
+\titleformat{\section}
+{\color{primaryblue}\normalfont\Large\bfseries}
+{\thesection}{1em}{}
+
+\titleformat{\subsection}
+{\color{primaryblue}\normalfont\large\bfseries}
+{\thesubsection}{1em}{}
+
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge\bfseries Drone Survey Management System\par}
+    \vspace{0.5cm}
+    {\Large Technical Documentation\par}
+    \vspace{2cm}
+    
+    {\large FlytBase Design Challenge Submission\par}
+    \vspace{1cm}
+    
+    \vfill
+    
+    {\large\textbf{Live Demo:}\par}
+    \vspace{0.3cm}
+    {\ttfamily https://drone-mnagement-system-tlfg.vercel.app\par}
+    
+    \vspace{1cm}
+    
+    {\large\textbf{Demo Credentials:}\par}
+    \vspace{0.3cm}
+    Email: \texttt{admin@dronesurvey.com}\\
+    Password: \texttt{password123}
+    
+    \vfill
+    
+    {\large December 2024\par}
+\end{titlepage}
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+% ============================================
+\section{Project Overview}
+% ============================================
+
+The Drone Survey Management System is a comprehensive full-stack web application designed to enable organizations to plan, manage, and monitor autonomous drone survey operations across multiple global sites. The platform focuses on the critical backbone of drone operations: mission management, real-time monitoring, fleet coordination, and survey reporting.
+
+\subsection{Key Capabilities}
+
+\begin{itemize}
+    \item \textbf{Mission Planning}: Define survey areas using interactive polygon drawing on maps, configure flight patterns (crosshatch, perimeter, grid), set altitude, speed, and sensor parameters
+    \item \textbf{Fleet Management}: Organization-wide drone inventory with real-time status tracking, battery monitoring, and maintenance scheduling
+    \item \textbf{Real-time Monitoring}: Live drone position visualization, mission progress tracking, and instant status updates via WebSocket
+    \item \textbf{Survey Analytics}: Comprehensive reporting dashboard with mission statistics, coverage analysis, and trend visualization
+\end{itemize}
+
+\subsection{Features Implemented}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Feature Category} & \textbf{Implementation Status} \\
+\hline
+Mission Planning \& Configuration & \checkmark Fully Implemented \\
+Fleet Visualization \& Management & \checkmark Fully Implemented \\
+Real-time Mission Monitoring & \checkmark Fully Implemented \\
+Survey Reporting \& Analytics & \checkmark Fully Implemented \\
+User Authentication & \checkmark Fully Implemented \\
+Role-based Access Control & \checkmark Fully Implemented \\
+\hline
+\end{tabular}
+\caption{Feature Implementation Status}
+\end{table}
+
+\newpage
+
+% ============================================
+\section{System Architecture}
+% ============================================
+
+\subsection{High-Level Architecture}
+
+The system follows a three-tier architecture pattern with clear separation between the presentation layer (React frontend), business logic layer (Express.js backend), and data layer (PostgreSQL database).
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.5cm,
+    box/.style={rectangle, draw, minimum width=3cm, minimum height=1cm, align=center},
+    bigbox/.style={rectangle, draw, minimum width=10cm, minimum height=2.5cm, align=center}
+]
+
+% Client Layer
+\node[bigbox, fill=blue!10] (client) {
+    \textbf{CLIENT (React)}\\
+    Auth Context | Dashboard | Map Components\\
+    WebSocket Context | API Service | State Management
+};
+
+% Server Layer
+\node[bigbox, fill=green!10, below=of client] (server) {
+    \textbf{SERVER (Express.js)}\\
+    Routes (REST API) | Services (Business Logic) | Middleware\\
+    Models (Data Access) | Socket.IO (Real-time)
+};
+
+% Database Layer
+\node[bigbox, fill=orange!10, below=of server] (db) {
+    \textbf{PostgreSQL Database}\\
+    users | drones | missions | sites | reports
+};
+
+% Arrows
+\draw[->, thick] (client) -- node[right] {HTTPS / WSS} (server);
+\draw[->, thick] (server) -- node[right] {SQL} (db);
+
+\end{tikzpicture}
+\caption{High-Level System Architecture}
+\end{figure}
+
+\subsection{Component Interaction Flow}
+
+\begin{verbatim}
+User Action → React Component → API Service → Express Route 
+    → Service Layer → Model → Database
+              ↓                        ↓
+        WebSocket Context ← Socket.IO ←┘
+              ↓
+        UI State Update
+\end{verbatim}
+
+\newpage
+
+% ============================================
+\section{Technology Stack}
+% ============================================
+
+\subsection{Frontend Technologies}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Technology} & \textbf{Version} & \textbf{Purpose} \\
+\hline
+React & 18.x & UI component library \\
+Vite & 5.x & Build tool and dev server \\
+Leaflet.js & 1.9.x & Interactive map rendering \\
+OpenStreetMap & - & Map tile provider (no API key) \\
+Recharts & 2.x & Data visualization and charts \\
+Socket.IO Client & 4.x & Real-time WebSocket communication \\
+Axios & 1.x & HTTP client for API requests \\
+React Router & 6.x & Client-side routing \\
+\hline
+\end{tabular}
+\caption{Frontend Technology Stack}
+\end{table}
+
+\subsection{Backend Technologies}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Technology} & \textbf{Version} & \textbf{Purpose} \\
+\hline
+Node.js & 18.x & JavaScript runtime \\
+Express.js & 4.x & Web application framework \\
+PostgreSQL & 15.x & Relational database \\
+Socket.IO & 4.x & Real-time bidirectional communication \\
+JSON Web Token & 9.x & Authentication tokens \\
+bcryptjs & 2.x & Password hashing \\
+Helmet & 7.x & Security headers \\
+CORS & 2.x & Cross-origin resource sharing \\
+\hline
+\end{tabular}
+\caption{Backend Technology Stack}
+\end{table}
+
+\subsection{Deployment Infrastructure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Service} & \textbf{Purpose} \\
+\hline
+Vercel & Frontend hosting with CDN \\
+Render & Backend hosting with auto-scaling \\
+Render PostgreSQL & Managed database hosting \\
+GitHub & Version control and CI/CD trigger \\
+\hline
+\end{tabular}
+\caption{Deployment Infrastructure}
+\end{table}
+
+\newpage
+
+% ============================================
+\section{Database Design}
+% ============================================
+
+\subsection{Entity Relationship Overview}
+
+The database consists of five main tables with the following relationships:
+\begin{itemize}
+    \item \texttt{users} - Stores user accounts and authentication data
+    \item \texttt{drones} - Stores drone fleet information and status
+    \item \texttt{missions} - Stores mission configurations and progress
+    \item \texttt{sites} - Stores survey site locations
+    \item \texttt{survey\_reports} - Stores generated reports (optional)
+\end{itemize}
+
+\subsection{Table Schemas}
+
+\subsubsection{Users Table}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    role VARCHAR(50) DEFAULT 'operator' 
+        CHECK (role IN ('admin', 'operator', 'viewer')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+\end{lstlisting}
+
+\subsubsection{Drones Table}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE drones (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    model VARCHAR(255),
+    serial_number VARCHAR(255) UNIQUE,
+    status VARCHAR(50) DEFAULT 'available' 
+        CHECK (status IN ('available', 'in_mission', 
+                          'maintenance', 'offline')),
+    battery_level INTEGER DEFAULT 100 
+        CHECK (battery_level >= 0 AND battery_level <= 100),
+    max_flight_time INTEGER DEFAULT 30,
+    max_speed DECIMAL(5,2) DEFAULT 15.0,
+    sensors JSONB DEFAULT '["RGB"]',
+    last_maintenance TIMESTAMP,
+    total_flight_hours DECIMAL(10,2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+\end{lstlisting}
+
+\subsubsection{Missions Table}
+
+\begin{lstlisting}[language=SQL]
+CREATE TABLE missions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    drone_id UUID REFERENCES drones(id),
+    site_id UUID REFERENCES sites(id),
+    created_by UUID REFERENCES users(id),
+    status VARCHAR(50) DEFAULT 'planned',
+    flight_pattern VARCHAR(50) DEFAULT 'crosshatch',
+    survey_area JSONB,
+    flight_path JSONB,
+    altitude DECIMAL(6,2) DEFAULT 50.0,
+    speed DECIMAL(5,2) DEFAULT 10.0,
+    overlap_percentage INTEGER DEFAULT 70,
+    sensors JSONB DEFAULT '["RGB"]',
+    estimated_duration INTEGER,
+    actual_duration INTEGER,
+    coverage_area DECIMAL(12,2),
+    progress INTEGER DEFAULT 0,
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+\end{lstlisting}
+
+\newpage
+
+% ============================================
+\section{API Documentation}
+% ============================================
+
+\subsection{Base URLs}
+
+\begin{itemize}
+    \item \textbf{Development}: \texttt{http://localhost:5001/api}
+    \item \textbf{Production}: \texttt{https://drone-mnagement-system.onrender.com/api}
+\end{itemize}
+
+\subsection{Authentication Endpoints}
+
+\subsubsection{POST /api/auth/login}
+
+Authenticates a user and returns JWT token.
+
+\textbf{Request Body:}
+\begin{lstlisting}[language=json]
+{
+  "email": "admin@dronesurvey.com",
+  "password": "password123"
+}
+\end{lstlisting}
+
+\textbf{Response (200 OK):}
+\begin{lstlisting}[language=json]
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "uuid",
+    "email": "admin@dronesurvey.com",
+    "name": "Admin User",
+    "role": "admin"
+  }
+}
+\end{lstlisting}
+
+\subsubsection{POST /api/auth/register}
+
+Creates a new user account.
+
+\textbf{Request Body:}
+\begin{lstlisting}[language=json]
+{
+  "email": "user@example.com",
+  "password": "securepassword",
+  "name": "New User",
+  "role": "operator"
+}
+\end{lstlisting}
+
+\subsection{Mission Endpoints}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+GET & /api/missions & List all missions \\
+POST & /api/missions & Create new mission \\
+GET & /api/missions/:id & Get mission details \\
+PUT & /api/missions/:id & Update mission \\
+DELETE & /api/missions/:id & Delete mission \\
+POST & /api/missions/:id/start & Start mission \\
+POST & /api/missions/:id/pause & Pause mission \\
+POST & /api/missions/:id/resume & Resume mission \\
+POST & /api/missions/:id/abort & Abort mission \\
+\hline
+\end{tabular}
+\caption{Mission API Endpoints}
+\end{table}
+
+\subsubsection{POST /api/missions - Create Mission}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language=json]
+{
+  "name": "Warehouse Inspection",
+  "description": "Monthly inspection of warehouse facility",
+  "drone_id": "uuid",
+  "site_id": "uuid",
+  "flight_pattern": "crosshatch",
+  "survey_area": {
+    "type": "Polygon",
+    "coordinates": [[[lng, lat], [lng, lat], ...]]
+  },
+  "altitude": 50,
+  "speed": 10,
+  "overlap_percentage": 70,
+  "sensors": ["RGB", "Thermal"]
+}
+\end{lstlisting}
+
+\subsection{Drone Endpoints}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+GET & /api/drones & List all drones \\
+POST & /api/drones & Register new drone \\
+GET & /api/drones/:id & Get drone details \\
+PUT & /api/drones/:id & Update drone \\
+PATCH & /api/drones/:id/status & Update drone status \\
+\hline
+\end{tabular}
+\caption{Drone API Endpoints}
+\end{table}
+
+\subsection{Reports Endpoints}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Method} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+GET & /api/reports/stats & Get organization statistics \\
+GET & /api/reports/missions & Get mission reports \\
+\hline
+\end{tabular}
+\caption{Reports API Endpoints}
+\end{table}
+
+\newpage
+
+% ============================================
+\section{Frontend Architecture}
+% ============================================
+
+\subsection{Component Hierarchy}
+
+\begin{verbatim}
+App.jsx
+├── AuthContext.Provider
+│   └── WebSocketContext.Provider
+│       ├── LandingPage
+│       ├── LoginForm
+│       └── ProtectedRoute
+│           └── DashboardLayout
+│               ├── Sidebar
+│               ├── Header
+│               └── Main Content Area
+│                   ├── MissionPlanner
+│                   │   ├── MapContainer
+│                   │   │   └── DrawingTools
+│                   │   └── MissionConfigPanel
+│                   ├── MissionList
+│                   ├── MissionMonitor
+│                   │   └── MapContainer (Live View)
+│                   ├── FleetDashboard
+│                   │   └── DroneCard (multiple)
+│                   ├── ReportsDashboard
+│                   │   ├── StatisticsCards
+│                   │   └── Charts (Recharts)
+│                   └── UserManagement
+\end{verbatim}
+
+\subsection{State Management}
+
+The application uses React Context API for global state management:
+
+\subsubsection{AuthContext}
+\begin{itemize}
+    \item Manages user authentication state
+    \item Stores JWT token in localStorage
+    \item Provides login/logout functions
+    \item Handles token refresh
+\end{itemize}
+
+\subsubsection{WebSocketContext}
+\begin{itemize}
+    \item Manages Socket.IO connection
+    \item Provides real-time event subscriptions
+    \item Handles connection/disconnection
+    \item Broadcasts mission updates
+\end{itemize}
+
+\subsection{Key Components}
+
+\subsubsection{MapContainer}
+Interactive map component using Leaflet.js with OpenStreetMap tiles.
+
+\textbf{Features:}
+\begin{itemize}
+    \item Polygon drawing for survey area definition
+    \item Flight path visualization
+    \item Real-time drone position updates
+    \item Layer controls for different map views
+\end{itemize}
+
+\subsubsection{MissionPlanner}
+Comprehensive mission configuration interface.
+
+\textbf{Features:}
+\begin{itemize}
+    \item Survey area drawing tools
+    \item Flight pattern selection (Crosshatch, Perimeter, Grid)
+    \item Parameter configuration (altitude, speed, overlap)
+    \item Sensor selection
+    \item Estimated duration calculation
+    \item Area coverage calculation
+\end{itemize}
+
+\subsubsection{MissionMonitor}
+Real-time mission tracking interface.
+
+\textbf{Features:}
+\begin{itemize}
+    \item Live drone position on map
+    \item Progress bar with percentage
+    \item Status indicators
+    \item Mission control buttons (Pause, Resume, Abort)
+    \item Telemetry data display
+\end{itemize}
+
+\newpage
+
+% ============================================
+\section{Real-time Communication}
+% ============================================
+
+\subsection{WebSocket Events}
+
+\subsubsection{Client to Server Events}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Event} & \textbf{Payload} & \textbf{Description} \\
+\hline
+authenticate & \{token: string\} & Authenticates WebSocket connection \\
+subscribe:mission & \{missionId: string\} & Subscribe to mission updates \\
+unsubscribe:mission & \{missionId: string\} & Unsubscribe from mission \\
+\hline
+\end{tabular}
+\caption{Client to Server WebSocket Events}
+\end{table}
+
+\subsubsection{Server to Client Events}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Event} & \textbf{Description} \\
+\hline
+mission:updated & Mission status/progress changed \\
+drone:telemetry & Real-time drone telemetry data \\
+drone:status & Drone status changed \\
+mission:completed & Mission completed with stats \\
+\hline
+\end{tabular}
+\caption{Server to Client WebSocket Events}
+\end{table}
+
+\subsection{Implementation Example}
+
+\textbf{Server-side emission:}
+\begin{lstlisting}[language=JavaScript]
+io.to(`mission:${missionId}`).emit('mission:updated', {
+  id: missionId,
+  progress: 45,
+  status: 'in_progress',
+  drone_position: { lat: 37.7749, lng: -122.4194 }
+});
+\end{lstlisting}
+
+\textbf{Client-side subscription:}
+\begin{lstlisting}[language=JavaScript]
+socket.on('mission:updated', (data) => {
+  setMissionProgress(data.progress);
+  updateDronePosition(data.drone_position);
+});
+\end{lstlisting}
+
+\newpage
+
+% ============================================
+\section{Authentication \& Security}
+% ============================================
+
+\subsection{JWT Authentication Flow}
+
+\begin{enumerate}
+    \item User submits credentials (email/password)
+    \item Server validates credentials against database
+    \item Server generates JWT token (24-hour expiry)
+    \item Client stores token in localStorage
+    \item Client includes token in Authorization header for all requests
+    \item Server validates token on each protected request
+    \item Token refresh before expiry (optional)
+\end{enumerate}
+
+\subsection{Security Measures}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Security Feature} & \textbf{Implementation} \\
+\hline
+Password Hashing & bcryptjs with 10 salt rounds \\
+JWT Tokens & Signed with secret key, 24h expiration \\
+CORS & Configured for specific origins only \\
+Helmet & XSS protection, content type sniffing prevention \\
+Input Validation & Server-side validation on all inputs \\
+Role-Based Access & Admin, Operator, Viewer roles \\
+\hline
+\end{tabular}
+\caption{Security Measures}
+\end{table}
+
+\subsection{Role Permissions}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Action} & \textbf{Admin} & \textbf{Operator} & \textbf{Viewer} \\
+\hline
+View Missions & \checkmark & \checkmark & \checkmark \\
+Create Missions & \checkmark & \checkmark & $\times$ \\
+Start/Stop Missions & \checkmark & \checkmark & $\times$ \\
+Manage Drones & \checkmark & \checkmark & $\times$ \\
+Manage Users & \checkmark & $\times$ & $\times$ \\
+View Reports & \checkmark & \checkmark & \checkmark \\
+\hline
+\end{tabular}
+\caption{Role-Based Permissions Matrix}
+\end{table}
+
+\newpage
+
+% ============================================
+\section{Deployment Architecture}
+% ============================================
+
+\subsection{Production Environment}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=2cm,
+    box/.style={rectangle, draw, minimum width=4cm, minimum height=1.5cm, align=center, fill=blue!10}
+]
+
+\node[box] (internet) {INTERNET\\(Users)};
+\node[box, below left=of internet, fill=green!10] (vercel) {VERCEL\\Frontend Hosting\\CDN, HTTPS};
+\node[box, below right=of internet, fill=orange!10] (render) {RENDER\\Backend Hosting\\Express.js, Socket.IO};
+\node[box, below=of render, fill=yellow!10] (db) {RENDER PostgreSQL\\Database Hosting};
+
+\draw[->, thick] (internet) -- (vercel);
+\draw[->, thick] (internet) -- (render);
+\draw[->, thick] (render) -- (db);
+\draw[<->, dashed] (vercel) -- node[above] {API Calls} (render);
+
+\end{tikzpicture}
+\caption{Production Deployment Architecture}
+\end{figure}
+
+\subsection{Environment Variables}
+
+\subsubsection{Frontend (Vercel)}
+\begin{lstlisting}
+VITE_API_URL=https://drone-mnagement-system.onrender.com/api
+VITE_WS_URL=https://drone-mnagement-system.onrender.com
+\end{lstlisting}
+
+\subsubsection{Backend (Render)}
+\begin{lstlisting}
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
+JWT_SECRET=<secure-random-string>
+JWT_EXPIRES_IN=24h
+NODE_ENV=production
+CLIENT_URL=https://your-app.vercel.app
+\end{lstlisting}
+
+\newpage
+
+% ============================================
+\section{Design Decisions \& Trade-offs}
+% ============================================
+
+\subsection{Key Design Decisions}
+
+\subsubsection{1. OpenStreetMap vs Mapbox}
+
+\textbf{Decision}: OpenStreetMap with Leaflet.js
+
+\textbf{Rationale}:
+\begin{itemize}
+    \item No API key required, reducing deployment complexity
+    \item Free and open-source
+    \item Sufficient for mission planning visualization
+    \item Leaflet provides excellent polygon drawing tools
+\end{itemize}
+
+\textbf{Trade-off}: Mapbox offers more advanced features like 3D terrain and satellite imagery, but requires API key management and has usage limits.
+
+\subsubsection{2. PostgreSQL vs MongoDB}
+
+\textbf{Decision}: PostgreSQL
+
+\textbf{Rationale}:
+\begin{itemize}
+    \item Strong relational data model for missions, drones, users
+    \item Native JSON/JSONB support for GeoJSON data
+    \item ACID compliance for mission-critical operations
+    \item Better for complex queries and reporting
+\end{itemize}
+
+\textbf{Trade-off}: MongoDB might offer more flexibility for rapidly changing schemas, but our data model is well-defined.
+
+\subsubsection{3. Socket.IO vs Server-Sent Events}
+
+\textbf{Decision}: Socket.IO
+
+\textbf{Rationale}:
+\begin{itemize}
+    \item Bidirectional communication needed for mission control
+    \item Built-in room support for mission subscriptions
+    \item Automatic reconnection handling
+    \item Fallback to polling if WebSocket unavailable
+\end{itemize}
+
+\textbf{Trade-off}: SSE would be simpler for one-way updates, but we need bidirectional communication.
+
+\subsubsection{4. React Context vs Redux}
+
+\textbf{Decision}: React Context API
+
+\textbf{Rationale}:
+\begin{itemize}
+    \item Simpler setup for medium-sized application
+    \item Sufficient for auth and WebSocket state
+    \item Less boilerplate code
+    \item Built into React
+\end{itemize}
+
+\textbf{Trade-off}: Redux would provide better debugging tools and middleware support for larger applications.
+
+\subsection{Trade-offs Summary}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Decision} & \textbf{Benefit} & \textbf{Trade-off} \\
+\hline
+Simulated telemetry & Demonstrates all features & Not real hardware \\
+JWT in localStorage & Simple implementation & Less secure than cookies \\
+Single database & Simpler deployment & May need sharding at scale \\
+OpenStreetMap & No API key needed & Less features than Mapbox \\
+\hline
+\end{tabular}
+\caption{Trade-offs Summary}
+\end{table}
+
+\newpage
+
+% ============================================
+\section{Safety \& Adaptability Strategy}
+% ============================================
+
+\subsection{Mission Safety Features}
+
+\subsubsection{State Machine Validation}
+\begin{itemize}
+    \item Missions follow strict status transitions
+    \item Cannot start mission without assigned drone
+    \item Cannot assign drone already in mission
+    \item Automatic status updates on completion/abort
+\end{itemize}
+
+\subsubsection{Drone Availability Checks}
+\begin{lstlisting}[language=JavaScript]
+// Before starting mission
+if (drone.status !== 'available') {
+  throw new Error('Drone is not available');
+}
+if (drone.battery_level < 20) {
+  throw new Error('Drone battery too low');
+}
+\end{lstlisting}
+
+\subsubsection{Graceful Degradation}
+\begin{itemize}
+    \item WebSocket disconnection doesn't crash the app
+    \item Automatic reconnection attempts
+    \item Fallback to polling if needed
+\end{itemize}
+
+\subsection{Adaptability Features}
+
+\subsubsection{Modular Architecture}
+\begin{itemize}
+    \item Services layer separates business logic
+    \item Easy to add new flight patterns
+    \item Sensor types configurable per mission
+\end{itemize}
+
+\subsubsection{Configurable Parameters}
+\begin{itemize}
+    \item Flight altitude: 10-120 meters
+    \item Speed: 1-20 m/s
+    \item Overlap: 30-90\%
+    \item Multiple sensor combinations
+\end{itemize}
+
+\subsubsection{Extensible Database Schema}
+\begin{itemize}
+    \item JSONB fields for flexible data storage
+    \item Easy to add new drone capabilities
+    \item Mission metadata extensible
+\end{itemize}
+
+\subsection{Error Handling Strategy}
+
+\begin{lstlisting}[language=JavaScript]
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  
+  // Don't expose internal errors in production
+  const message = process.env.NODE_ENV === 'production' 
+    ? 'Internal server error' 
+    : err.message;
+    
+  res.status(err.status || 500).json({ error: message });
+});
+\end{lstlisting}
+
+\newpage
+
+% ============================================
+\section{AI Tools Usage}
+% ============================================
+
+\subsection{Tools Utilized}
+
+\begin{enumerate}
+    \item \textbf{Kiro IDE} - AI-powered development environment
+    \item \textbf{Claude AI} - Code generation and architecture assistance
+\end{enumerate}
+
+\subsection{AI-Assisted Development Areas}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Area} & \textbf{AI Contribution} \\
+\hline
+Architecture Design & System component structure, database schema \\
+Boilerplate Code & Express routes, React components, API services \\
+CSS Styling & Glassmorphic design, responsive layouts \\
+WebSocket Implementation & Socket.IO event handling patterns \\
+Error Handling & Comprehensive error middleware \\
+Documentation & API documentation, code comments \\
+\hline
+\end{tabular}
+\caption{AI-Assisted Development Areas}
+\end{table}
+
+\subsection{Human-Led Decisions}
+
+\begin{itemize}
+    \item Overall system architecture
+    \item Technology stack selection
+    \item Business logic implementation
+    \item Security considerations
+    \item Deployment strategy
+    \item UI/UX design direction
+\end{itemize}
+
+\newpage
+
+% ============================================
+\section{Future Enhancements}
+% ============================================
+
+\subsection{Planned Features}
+
+\begin{enumerate}
+    \item \textbf{Advanced Flight Planning}
+    \begin{itemize}
+        \item Obstacle avoidance path planning
+        \item Weather integration for flight safety
+        \item Battery optimization algorithms
+    \end{itemize}
+    
+    \item \textbf{Enhanced Analytics}
+    \begin{itemize}
+        \item Machine learning for mission duration prediction
+        \item Anomaly detection in drone telemetry
+        \item Coverage optimization suggestions
+    \end{itemize}
+    
+    \item \textbf{Multi-Organization Support}
+    \begin{itemize}
+        \item Tenant isolation
+        \item Organization-level permissions
+        \item Shared drone pools
+    \end{itemize}
+    
+    \item \textbf{Mobile Application}
+    \begin{itemize}
+        \item React Native companion app
+        \item Field operator interface
+        \item Offline mission planning
+    \end{itemize}
+    
+    \item \textbf{Integration APIs}
+    \begin{itemize}
+        \item Webhook support for external systems
+        \item Third-party drone manufacturer APIs
+        \item GIS system integration
+    \end{itemize}
+\end{enumerate}
+
+\newpage
+
+% ============================================
+\section{Appendix}
+% ============================================
+
+\subsection{Demo Credentials}
+
+\begin{verbatim}
+Email: admin@dronesurvey.com
+Password: password123
+\end{verbatim}
+
+\subsection{Local Development Setup}
+
+\begin{lstlisting}[language=bash]
+# Clone repository
+git clone <repository-url>
+cd drone-survey-management
+
+# Install dependencies
+npm install
+cd client && npm install
+cd ../server && npm install
+
+# Configure environment
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+
+# Setup database
+cd server
+npm run migrate
+npm run seed
+
+# Start development servers
+npm run dev  # From root directory
+\end{lstlisting}
+
+\subsection{Project Statistics}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Metric} & \textbf{Value} \\
+\hline
+Total Lines of Code & ~15,000+ \\
+React Components & 25+ \\
+API Endpoints & 20+ \\
+Database Tables & 5 \\
+WebSocket Events & 8 \\
+\hline
+\end{tabular}
+\caption{Project Statistics}
+\end{table}
+
+\subsection{Project Structure}
+
+\begin{verbatim}
+drone-survey-management/
+├── client/                 # React frontend
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── context/       # Auth & WebSocket contexts
+│   │   ├── hooks/         # Custom hooks
+│   │   ├── services/      # API services
+│   │   └── styles/        # Global styles
+│   └── index.html
+├── server/                 # Express backend
+│   ├── src/
+│   │   ├── config/        # Database config
+│   │   ├── db/            # Migrations & seeds
+│   │   ├── middleware/    # Auth middleware
+│   │   ├── models/        # Database models
+│   │   ├── routes/        # API routes
+│   │   ├── services/      # Business logic
+│   │   └── socket/        # WebSocket handlers
+│   └── tests/             # Test files
+├── DOCUMENTATION.md       # Markdown documentation
+├── DOCUMENTATION.tex      # LaTeX documentation
+└── README.md              # Project readme
+\end{verbatim}
+
+\vfill
+
+\begin{center}
+\rule{0.5\textwidth}{0.4pt}\\
+\vspace{0.5cm}
+\textit{This documentation provides a comprehensive overview of the Drone Survey Management System architecture, implementation details, and design decisions.}
+\end{center}
+
+\end{document}
