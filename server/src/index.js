@@ -23,19 +23,66 @@ const siteRoutes = require('./routes/siteRoutes');
 const app = express();
 const server = http.createServer(app);
 
-// Initialize Socket.IO
+// Initialize Socket.IO with proper CORS
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+    origin: function (origin, callback) {
+      // Allow all origins for WebSocket (can be restricted later)
+      callback(null, true);
+    },
+    methods: ['GET', 'POST'],
+    credentials: false,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 // Make io accessible to routes
 app.set('io', io);
 
-// Simple CORS - allow all origins (no credentials needed since we use JWT in header)
-app.use(cors());
+// CORS configuration for production deployment
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://drone-mnagement-system-tlfg-9wav36zls-swayanshu-routs-projects.vercel.app',
+      'https://drone-mnagement-system-tlfg-md9a1gzze-swayanshu-routs-projects.vercel.app',
+      /^https:\/\/drone-mnagement-system-tlfg-.*\.vercel\.app$/,  // All Vercel preview deployments
+      'https://drone-mnagement-system.vercel.app'  // Production Vercel domain
+    ];
+    
+    // Check if origin is allowed
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (allowed instanceof RegExp) {
+        return allowed.test(origin);
+      }
+      return allowed === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked origin: ${origin}`);
+      callback(null, true); // Allow anyway for now, can be strict later
+    }
+  },
+  credentials: false, // We use JWT in headers, not cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
