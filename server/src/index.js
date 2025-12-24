@@ -30,8 +30,15 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://drone-mnagement-system-tlfg-d1whqqnas-swayanshu-routs-projects.vercel.app',
+      'https://drone-mnagement-system-tlfg.vercel.app',
+      process.env.CLIENT_URL
+    ].filter(Boolean),
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
@@ -43,12 +50,25 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// CORS configuration - Allow all origins since we use JWT in headers (not cookies)
-app.use(cors({
-  origin: '*',
+// CORS configuration
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://drone-mnagement-system-tlfg-d1whqqnas-swayanshu-routs-projects.vercel.app',
+    'https://drone-mnagement-system-tlfg.vercel.app',
+    process.env.CLIENT_URL
+  ].filter(Boolean),
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Apply CORS
+app.use(cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
