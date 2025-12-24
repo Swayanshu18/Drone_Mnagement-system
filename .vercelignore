@@ -1,0 +1,11 @@
+# Vercel Ignore File
+# Only ignore what's necessary
+
+node_modules
+.git
+*.log
+.env.local
+.DS_Store
+server/
+*.md
+!README.md
