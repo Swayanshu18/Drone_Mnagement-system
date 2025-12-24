@@ -11,7 +11,7 @@ A comprehensive full-stack web application for planning, managing, and monitorin
 
 ## 🚀 Live Demo
 
-**Frontend URL:** `https://drone-mnagement-system-tlfg-9wav36zls-swayanshu-routs-projects.vercel.app/`
+**Frontend URL:** `(https://drone-mnagement-system-tlfg-akc2xezt3-swayanshu-routs-projects.vercel.app/)`
 
 **Backend API:** `https://drone-mnagement-system.onrender.com`
 
