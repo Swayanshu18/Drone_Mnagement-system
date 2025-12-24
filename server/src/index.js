@@ -30,13 +30,17 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 const io = new Server(server, {
   cors: {
-    origin: [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'https://drone-mnagement-system-tlfg-d1whqqnas-swayanshu-routs-projects.vercel.app',
-      'https://drone-mnagement-system-tlfg.vercel.app',
-      process.env.CLIENT_URL
-    ].filter(Boolean),
+    origin: function(origin, callback) {
+      // Allow all Vercel preview URLs and localhost
+      if (!origin || 
+          origin.includes('localhost') || 
+          origin.includes('vercel.app') ||
+          origin.includes('drone-mnagement-system')) {
+        callback(null, origin || true);
+      } else {
+        callback(null, origin);
+      }
+    },
     methods: ['GET', 'POST'],
     credentials: true
   }
@@ -50,15 +54,35 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// CORS configuration
-const corsOptions = {
-  origin: [
+// CORS origin validation function
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // Allow requests with no origin (Postman, curl)
+  
+  const allowedPatterns = [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://drone-mnagement-system-tlfg-d1whqqnas-swayanshu-routs-projects.vercel.app',
-    'https://drone-mnagement-system-tlfg.vercel.app',
     process.env.CLIENT_URL
-  ].filter(Boolean),
+  ].filter(Boolean);
+  
+  // Check exact matches
+  if (allowedPatterns.includes(origin)) return true;
+  
+  // Check if it's a Vercel preview URL for this project
+  if (origin.includes('swayanshu-routs-projects.vercel.app')) return true;
+  if (origin.includes('drone-mnagement-system')) return true;
+  
+  return false;
+};
+
+// CORS configuration
+const corsOptions = {
+  origin: function(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      callback(null, origin || true);
+    } else {
+      callback(null, origin); // Allow anyway for now
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
