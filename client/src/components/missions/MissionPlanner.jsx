@@ -2,22 +2,69 @@
  * Mission Planner Component
  * 
  * Create and configure new missions with map integration.
- * Will be fully implemented in Task 16.
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import MapContainer from '../map/MapContainer';
+import DrawingTools from '../map/DrawingTools';
+import api from '../../services/api';
 import './MissionPlanner.css';
 
 function MissionPlanner() {
+  const navigate = useNavigate();
+  const [mapInstance, setMapInstance] = useState(null);
+  const [surveyArea, setSurveyArea] = useState(null);
+  const [drones, setDrones] = useState([]);
+  const [sites, setSites] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
   const [missionData, setMissionData] = useState({
     name: '',
     description: '',
+    droneId: '',
+    siteId: '',
     flightPattern: 'crosshatch',
     altitude: 50,
     speed: 10,
     overlapPercentage: 70,
     sensorType: 'RGB Camera'
   });
+
+  // Fetch available drones and sites
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [dronesRes, sitesRes] = await Promise.all([
+          api.get('/drones'),
+          api.get('/sites')
+        ]);
+        setDrones(dronesRes.data);
+        setSites(sitesRes.data);
+        
+        // Auto-select first available drone
+        if (dronesRes.data.length > 0) {
+          setMissionData(prev => ({ ...prev, droneId: dronesRes.data[0].id }));
+        }
+        // Auto-select first site
+        if (sitesRes.data.length > 0) {
+          setMissionData(prev => ({ ...prev, siteId: sitesRes.data[0].id }));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const handleMapReady = useCallback((map) => {
+    setMapInstance(map);
+  }, []);
+
+  const handleAreaDrawn = useCallback((area) => {
+    setSurveyArea(area);
+    console.log('Survey area drawn:', area);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,8 +73,45 @@ function MissionPlanner() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Mission data:', missionData);
-    // Will submit to API
+    
+    if (!missionData.droneId) {
+      alert('Please select a drone');
+      return;
+    }
+    
+    if (!surveyArea) {
+      alert('Please draw a survey area on the map');
+      return;
+    }
+    
+    setLoading(true);
+    
+    const payload = {
+      name: missionData.name,
+      description: missionData.description,
+      drone_id: missionData.droneId,
+      site_id: missionData.siteId,
+      survey_area: surveyArea.geometry,
+      flight_pattern: missionData.flightPattern,
+      altitude: parseFloat(missionData.altitude),
+      speed: parseFloat(missionData.speed),
+      overlap_percentage: parseFloat(missionData.overlapPercentage),
+      sensor_type: missionData.sensorType
+    };
+    
+    api.post('/missions', payload)
+      .then(response => {
+        console.log('Mission created:', response.data);
+        alert('Mission created successfully!');
+        navigate('/dashboard/missions');
+      })
+      .catch(error => {
+        console.error('Error creating mission:', error);
+        alert('Error creating mission: ' + (error.response?.data?.message || error.message));
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   };
 
   return (
@@ -38,11 +122,29 @@ function MissionPlanner() {
 
       <div className="planner-layout">
         <div className="planner-map">
-          <div className="map-placeholder">
-            <p>🗺️ Mapbox Map</p>
-            <p className="text-sm text-muted">Draw survey area here</p>
-            <p className="text-xs text-muted">(Will be implemented in Task 15)</p>
-          </div>
+          <MapContainer
+            initialCenter={[37.7749, -122.4194]}
+            initialZoom={13}
+            onMapReady={handleMapReady}
+          />
+          {mapInstance && (
+            <DrawingTools 
+              map={mapInstance} 
+              onAreaDrawn={handleAreaDrawn}
+            />
+          )}
+          {!surveyArea && (
+            <div className="map-hint">
+              <span className="hint-icon">✏️</span>
+              <span className="hint-text">Click the polygon tool (top-right) to draw survey area</span>
+            </div>
+          )}
+          {surveyArea && (
+            <div className="map-hint success">
+              <span className="hint-icon">✓</span>
+              <span className="hint-text">Survey area: {(surveyArea.area / 10000).toFixed(2)} hectares</span>
+            </div>
+          )}
         </div>
 
         <div className="planner-form card">
@@ -77,6 +179,44 @@ function MissionPlanner() {
               </div>
 
               <div className="form-group">
+                <label className="form-label">Select Drone *</label>
+                <select
+                  name="droneId"
+                  className="form-select"
+                  value={missionData.droneId}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Choose a drone...</option>
+                  {drones.map(drone => (
+                    <option key={drone.id} value={drone.id}>
+                      {drone.model} - {drone.serial_number} ({drone.status})
+                    </option>
+                  ))}
+                </select>
+                {drones.length === 0 && (
+                  <small className="form-text text-muted">⚠️ No drones available. Please add a drone first.</small>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Site Location</label>
+                <select
+                  name="siteId"
+                  className="form-select"
+                  value={missionData.siteId}
+                  onChange={handleChange}
+                >
+                  <option value="">Choose a site (optional)...</option>
+                  {sites.map(site => (
+                    <option key={site.id} value={site.id}>
+                      {site.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Flight Pattern</label>
                 <select
                   name="flightPattern"
@@ -84,9 +224,11 @@ function MissionPlanner() {
                   value={missionData.flightPattern}
                   onChange={handleChange}
                 >
+                  <option value="grid">Grid</option>
                   <option value="crosshatch">Crosshatch</option>
                   <option value="perimeter">Perimeter</option>
-                  <option value="grid">Grid</option>
+                  <option value="hatch">Hatch</option>
+                  <option value="waypoint">Waypoint</option>
                 </select>
               </div>
 
@@ -148,8 +290,8 @@ function MissionPlanner() {
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary btn-lg">
-                Create Mission
+              <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
+                {loading ? 'Creating...' : 'Create Mission'}
               </button>
             </form>
           </div>

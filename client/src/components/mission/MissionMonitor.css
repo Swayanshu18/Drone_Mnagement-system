@@ -1,307 +1,425 @@
-/* Main Container */
+/* Main Container - Dark Sci-Fi Background */
 .mission-monitor {
   height: calc(100vh - 64px);
-  /* Adjust based on navbar */
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
-  color: #333;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #0f172a;
+  /* Dark Slate */
+  color: #e2e8f0;
+  /* Light text */
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 /* Header */
 .page-header {
-  padding: 1rem 1.5rem;
-  background: #fff;
-  border-bottom: 1px solid #dee2e6;
+  padding: 1rem 2rem;
+  background: rgba(30, 41, 59, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.header-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
 .header-info h1 {
   font-size: 1.5rem;
   margin: 0;
-  color: #212529;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  /* Cyan Glow */
 }
 
-/* Sidebar + Map Layout Wrapper */
+/* Layout */
 .monitor-layout {
   display: flex;
   flex: 1;
   overflow: hidden;
-  /* Prevent full page scroll */
 }
 
-/* Sidebar */
+/* Sidebar - Glassmorphism */
 .monitor-sidebar {
-  width: 320px;
-  background: #fff;
-  border-right: 1px solid #dee2e6;
+  width: 360px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border-right: 1px solid rgba(56, 189, 248, 0.2);
+  /* Subtle Blue Border */
   overflow-y: auto;
-  padding: 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
   flex-shrink: 0;
-  /* Prevent sidebar shrinking */
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
 }
 
 /* Map Area */
 .monitor-map {
   flex: 1;
-  /* Take remaining width */
   position: relative;
-  background: #eee;
+  background: #0f172a;
 }
 
-/* Card Styles (Basic for visibility) */
+/* Futuristic Cards */
 .card {
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  padding: 1rem;
-  background: #fff;
+  background: rgba(51, 65, 85, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 12px;
+  padding: 1.25rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.card:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-2px);
 }
 
 .card h3 {
   margin-top: 0;
-  font-size: 1rem;
-  color: #495057;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding-bottom: 0.75rem;
   margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
 }
 
 /* Progress Bar */
 .progress-bar-container {
-  height: 10px;
-  background: #e9ecef;
-  border-radius: 5px;
+  height: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
   overflow: hidden;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: #0d6efd;
-  transition: width 0.3s;
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  /* Blue to Cyan */
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  transition: width 0.3s ease-out;
+}
+
+.progress-text {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.time-remaining {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #94a3b8;
 }
 
 /* Telemetry Grid */
 .telemetry-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .telemetry-item {
-  background: #f8f9fa;
-  padding: 0.5rem;
-  border: 1px solid #dee2e6;
+  background: rgba(15, 23, 42, 0.4);
+  padding: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.1);
   text-align: center;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 .telemetry-label {
   display: block;
-  font-size: 0.75rem;
-  color: #6c757d;
-  font-weight: bold;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
 }
 
 .telemetry-value {
   display: block;
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: bold;
-  color: #212529;
+  color: #38bdf8;
+  /* Cyan */
+  font-family: 'Roboto Mono', monospace;
+  text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+/* Battery */
+.battery-icon-container {
+  height: 24px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.battery-level {
+  height: 100%;
+  background: #22c55e;
+  /* Green */
+  transition: width 0.5s;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+}
+
+.battery-percentage {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 /* Buttons */
 .btn {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-weight: bold;
+  font-weight: 600;
   font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn-primary {
-  background: #0d6efd;
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
   color: white;
+  border: 1px solid #38bdf8;
+  box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
 }
 
 .btn-success {
-  background: #198754;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   color: white;
+  border: 1px solid #34d399;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
 }
 
 .btn-warning {
-  background: #ffc107;
-  color: black;
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  color: white;
+  border: 1px solid #fbbf24;
 }
 
 .btn-danger {
-  background: #dc3545;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
   color: white;
+  border: 1px solid #f87171;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
 }
 
 .btn-secondary {
-  background: #6c757d;
-  color: white;
+  background: rgba(51, 65, 85, 0.5);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.3);
 }
 
-.btn-info {
-  background: #0dcaf0;
-  color: black;
+.btn-secondary:hover {
+  background: rgba(51, 65, 85, 0.8);
+  color: #fff;
 }
 
 .btn-block {
-  display: block;
   width: 100%;
 }
 
 .control-buttons {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  /* Allow wrapping if too tight */
-}
-
-/* Badges */
-.badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: bold;
-}
-
-.badge-success {
-  background: #d1e7dd;
-  color: #0f5132;
-}
-
-.badge-warning {
-  background: #fff3cd;
-  color: #664d03;
-}
-
-.badge-danger {
-  background: #f8d7da;
-  color: #842029;
-}
-
-.badge-info {
-  background: #cff4fc;
-  color: #055160;
-}
-
-.badge-secondary {
-  background: #e2e3e5;
-  color: #41464b;
-}
-
-/* Mission Type Selector */
-.mission-type-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.mission-type-btn {
-  flex: 1;
-  min-width: 80px;
-  border: 1px solid #ced4da;
-  background: #fff;
-  padding: 0.5rem;
-  border-radius: 4px;
-  cursor: pointer;
-  text-align: center;
-  font-size: 0.8rem;
-  color: #333;
-}
-
-.mission-type-btn.active {
-  background: #cfe2ff;
-  border-color: #0d6efd;
-  color: #084298;
-  font-weight: bold;
+  gap: 0.75rem;
 }
 
 /* Speed Control */
 .speed-control {
-  background: #fff;
-  padding: 0.5rem;
+  background: transparent;
+  padding: 0;
 }
 
 .speed-slider-container {
-  margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-}
-
-.speed-slider {
-  width: 100%;
-  margin: 0.5rem 0;
+  margin-bottom: 1rem;
 }
 
 .speed-labels {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 0.8rem;
-  color: #666;
-  margin-bottom: 0.5rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
 }
 
 .speed-value {
-  font-weight: bold;
-  color: #0d6efd;
+  color: #f472b6;
+  /* Pink/Purple accent */
   font-size: 1rem;
-  padding: 0 1rem;
+  text-shadow: 0 0 8px rgba(244, 114, 182, 0.5);
+}
+
+input[type="range"] {
+  width: 100%;
+  height: 4px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f472b6;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.8);
+  transition: transform 0.1s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
 }
 
 .speed-presets {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
 }
 
 .preset-btn {
   flex: 1;
   padding: 0.5rem;
-  border: 1px solid #ced4da;
-  background: #f8f9fa;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  white-space: nowrap;
-  /* Prevent text wrap */
-}
-
-.speed-info {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  border-radius: 6px;
   font-size: 0.75rem;
-  color: #888;
-  margin-top: 0.5rem;
-  text-align: center;
-  font-style: italic;
+  transition: all 0.2s;
 }
 
-/* Drone Marker Animation */
+.preset-btn:hover {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.preset-btn.active {
+  background: rgba(244, 114, 182, 0.1);
+  color: #f472b6;
+  border-color: #f472b6;
+  box-shadow: 0 0 10px rgba(244, 114, 182, 0.1);
+}
+
+/* Mission Types */
+.mission-type-selector {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.mission-type-btn {
+  flex: 1;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.mission-type-btn:hover {
+  border-color: #38bdf8;
+  color: #fff;
+}
+
+.mission-type-btn.active {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+}
+
+/* Badges */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.badge-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-warning {
+  background: rgba(234, 179, 8, 0.1);
+  color: #facc15;
+  border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-secondary {
+  background: rgba(148, 163, 184, 0.1);
+  color: #cbd5e1;
+}
+
+.rth-badge {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Drone Marker */
 .drone-marker-icon.flying {
   transition: transform 0.1s linear;
 }
 
 .drone-icon-wrapper {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -310,26 +428,24 @@
 .drone-body {
   width: 40px;
   height: 40px;
-  /* transparent background */
   background-color: transparent;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230000FF'%3E%3Cpath d='M21,14L19,10H16L19,14M5,14L8,10H11L8,14M12,13L8.5,8H15.5L12,13M21,16C21,17.1 20.1,18 19,18V19H17V18H7V19H5V18C3.89,18 3,17.1 3,16V14L6,9H18L21,14V16Z' /%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2360A5FA'%3E%3Cpath d='M21,14L19,10H16L19,14M5,14L8,10H11L8,14M12,13L8.5,8H15.5L12,13M21,16C21,17.1 20.1,18 19,18V19H17V18H7V19H5V18C3.89,18 3,17.1 3,16V14L6,9H18L21,14V16Z' /%3E%3C/svg%3E");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
   z-index: 10;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.6));
 }
 
 .drone-propeller {
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 2px dashed #0d6efd;
+  border: 2px dashed rgba(96, 165, 250, 0.5);
   border-radius: 50%;
   animation: spin 0.2s linear infinite;
   z-index: 1;
   display: none;
-  /* Hide unless flying */
 }
 
 .flying .drone-propeller {

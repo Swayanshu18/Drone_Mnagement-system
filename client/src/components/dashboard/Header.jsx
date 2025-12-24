@@ -1,20 +1,14 @@
 /**
  * Header Component
  * 
- * Top header with user info and logout.
+ * Top header with connection status.
  */
 
-import { useAuth } from '../../hooks/useAuth';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import './Header.css';
 
 function Header() {
-  const { user, logout } = useAuth();
   const { isConnected } = useWebSocket();
-
-  const handleLogout = async () => {
-    await logout();
-  };
 
   return (
     <header className="header">
@@ -28,13 +22,6 @@ function Header() {
           <span className="status-text">
             {isConnected ? 'Live' : 'Offline'}
           </span>
-        </div>
-
-        <div className="header-user">
-          <span className="header-user-name">{user?.name}</span>
-          <button onClick={handleLogout} className="btn btn-secondary btn-sm">
-            Logout
-          </button>
         </div>
       </div>
     </header>

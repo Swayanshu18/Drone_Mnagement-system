@@ -284,286 +284,292 @@ function MissionMonitor() {
               </div>
             </div>
           </div>
-
-          {/* Mission Type Selection */}
-          <div className="card">
-            <h3>Mission Type</h3>
-            <div className="mission-type-selector">
-              {Object.values(MissionType).map((type) => (
-                <button
-                  key={type}
-                  className={`mission-type-btn ${simulation.selectedMissionType === type ? 'active' : ''}`}
-                  onClick={() => handleMissionTypeChange(type)}
-                  disabled={isFlying || isPaused}
-                >
-                  {type === MissionType.GRID && '📐'}
-                  {type === MissionType.CROSSHATCH && '✖️'}
-                  {type === MissionType.PERIMETER && '🔲'}
-                  {type === MissionType.WAYPOINT && '📍'}
-                  {type === MissionType.HATCH && '⬔'}
-                  <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
-                </button>
-              ))}
-            </div>
-            <p className="mission-type-description">
-              {simulation.selectedMissionType === MissionType.GRID && 'Horizontal lawn-mower pattern for efficient coverage'}
-              {simulation.selectedMissionType === MissionType.CROSSHATCH && 'Horizontal + vertical passes for double coverage'}
-              {simulation.selectedMissionType === MissionType.PERIMETER && 'Spiral inward from boundary for edge surveys'}
-              {simulation.selectedMissionType === MissionType.WAYPOINT && 'Direct point-to-point navigation'}
-              {simulation.selectedMissionType === MissionType.HATCH && 'Diagonal pattern at 45° for terrain coverage'}
-            </p>
-          </div>
-
-          {/* Speed Control */}
-          <div className="card">
-            <h3>Speed Control</h3>
-            <div className="speed-slider-container">
-              <input
-                type="range"
-                min="2"
-                max="20"
-                step="1"
-                value={simulation.targetSpeed}
-                onChange={(e) => handleSpeedChange(Number(e.target.value))}
-                className="speed-slider"
-              />
-              <div className="speed-labels">
-                <span>Slow</span>
-                <span className="speed-value">{simulation.targetSpeed} m/s</span>
-                <span>Fast</span>
-              </div>
-            </div>
-            <div className="speed-presets">
-              <button 
-                className={`preset-btn ${simulation.targetSpeed === SpeedPresets.SLOW ? 'active' : ''}`}
-                onClick={() => handleSpeedChange(SpeedPresets.SLOW)}
-              >
-                🐢 Slow
-              </button>
-              <button 
-                className={`preset-btn ${simulation.targetSpeed === SpeedPresets.NORMAL ? 'active' : ''}`}
-                onClick={() => handleSpeedChange(SpeedPresets.NORMAL)}
-              >
-                🚶 Normal
-              </button>
-              <button 
-                className={`preset-btn ${simulation.targetSpeed === SpeedPresets.FAST ? 'active' : ''}`}
-                onClick={() => handleSpeedChange(SpeedPresets.FAST)}
-              >
-                🏃 Fast
-              </button>
-            </div>
-            <p className="speed-info">
-              Higher speed = faster mission but more battery drain
-            </p>
-          </div>
-
-          {/* Mission Control */}
-          <div className="card">
-            <h3>Mission Control</h3>
-            
-            {/* Debug Info */}
-            {!simulation.canFly && (
-              <div className="debug-info" style={{
-                background: 'rgba(243, 156, 18, 0.2)',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                marginBottom: '0.75rem',
-                fontSize: '0.8rem',
-                color: '#f39c12'
-              }}>
-                <div><strong>Debug Info:</strong></div>
-                <div>Battery: {simulation.battery}%</div>
-                <div>Flight Path: {simulation.flightPath?.length || 0} points</div>
-                <div>Initialized: {simulation.isInitialized ? 'Yes' : 'No'}</div>
-                <div>Can Fly: {simulation.canFly ? 'Yes' : 'No'}</div>
-                <div>Drone State: {simulation.droneState}</div>
-              </div>
-            )}
-            
-            <div className="control-buttons">
-              {!isFlying && !isPaused && !isCharging ? (
-                <button 
-                  className="btn btn-success btn-block btn-start-mission"
-                  onClick={simulation.start}
-                  disabled={!simulation.canFly}
-                  title={!simulation.canFly ? 'Check debug info above' : 'Start the mission simulation'}
-                >
-                  ▶️ Start Mission
-                </button>
-              ) : isCharging ? (
-                <button className="btn btn-info btn-block" disabled>
-                  ⚡ Charging... {simulation.battery.toFixed(0)}%
-                </button>
-              ) : (
-                <>
-                  {isPaused ? (
-                    <button className="btn btn-success" onClick={simulation.resume}>
-                      ▶️ Resume
-                    </button>
-                  ) : (
-                    <button className="btn btn-warning" onClick={simulation.pause}>
-                      ⏸️ Pause
-                    </button>
-                  )}
-                  <button className="btn btn-danger" onClick={simulation.stop}>
-                    ⏹️ Abort
-                  </button>
-                </>
-              )}
-            </div>
-            
-            {/* RTH Button */}
-            {(isFlying || isPaused) && !isRTH && (
-              <button 
-                className="btn btn-rth btn-block"
-                onClick={() => simulation.triggerRTH('manual')}
-              >
-                🏠 Return to Home
-              </button>
-            )}
-
-            {/* Reset Button */}
-            {!isFlying && !isPaused && !isCharging && (
-              <button 
-                className="btn btn-secondary btn-block"
-                onClick={simulation.reset}
-                style={{ marginTop: '0.5rem' }}
-              >
-                🔄 Reset Simulation
-              </button>
-            )}
-
-            <p className="waypoint-count">
-              📍 {simulation.flightPath.length} waypoints
-            </p>
-          </div>
         </div>
 
-        {/* Map View */}
-        <div className="monitor-map">
-          <MapContainer
-            center={getMapCenter()}
-            zoom={16}
-            style={{ height: '100%', width: '100%' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <MapUpdater center={simulation.position} />
-            
-            {/* Survey Area */}
-            {getSurveyAreaCoords().length > 0 && (
-              <Polygon
-                positions={getSurveyAreaCoords()}
-                pathOptions={{
-                  color: '#3498db',
-                  fillColor: '#3498db',
-                  fillOpacity: 0.15,
-                  weight: 2
-                }}
+        {/* Map and Controls Container */}
+        <div className="monitor-map-container">
+          {/* Map View */}
+          <div className="monitor-map">
+            <MapContainer
+              center={getMapCenter()}
+              zoom={16}
+              style={{ height: '100%', width: '100%' }}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-            )}
-            
-            {/* Planned Flight Path */}
-            {simulation.flightPath.length > 0 && simulation.flightPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
-              <Polyline
-                positions={simulation.flightPath}
-                pathOptions={{
-                  color: '#95a5a6',
-                  weight: 1,
-                  dashArray: '5, 5',
-                  opacity: 0.4
-                }}
-              />
-            )}
-            
-            {/* Completed Path */}
-            {simulation.completedPath.length > 0 && simulation.completedPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
-              <Polyline
-                positions={simulation.completedPath}
-                pathOptions={{
-                  color: '#2ecc71',
-                  weight: 3,
-                  opacity: 0.8
-                }}
-              />
-            )}
-
-            {/* RTH Path */}
-            {simulation.rthPath.length > 0 && simulation.rthPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
-              <Polyline
-                positions={simulation.rthPath}
-                pathOptions={{
-                  color: '#e74c3c',
-                  weight: 3,
-                  dashArray: '10, 5',
-                  opacity: 0.8
-                }}
-              />
-            )}
-            
-            {/* Home Base Marker */}
-            {simulation.homePosition && isFinite(simulation.homePosition[0]) && isFinite(simulation.homePosition[1]) && (
-              <>
-                <Marker position={simulation.homePosition} icon={homeIcon} />
-                <Circle
-                  center={simulation.homePosition}
-                  radius={20}
+              <MapUpdater center={simulation.position} />
+              
+              {/* Survey Area */}
+              {getSurveyAreaCoords().length > 0 && (
+                <Polygon
+                  positions={getSurveyAreaCoords()}
                   pathOptions={{
                     color: '#3498db',
                     fillColor: '#3498db',
-                    fillOpacity: 0.2
+                    fillOpacity: 0.15,
+                    weight: 2
                   }}
                 />
-              </>
-            )}
-            
-            {/* Drone Marker */}
-            {simulation.position && isFinite(simulation.position[0]) && isFinite(simulation.position[1]) && (
-              <Marker 
-                position={simulation.position} 
-                icon={createDroneIcon(simulation.heading, isFlying)} 
-              />
-            )}
-          </MapContainer>
-          
-          {/* Status Overlay */}
-          <div className="simulation-overlay">
-            {isFlying && !isPaused && (
-              <span className="status-indicator running">
-                🔴 LIVE
-              </span>
-            )}
-            {isPaused && (
-              <span className="status-indicator paused">
-                ⏸️ PAUSED
-              </span>
-            )}
-            {isRTH && (
-              <span className="status-indicator rth">
-                🏠 RTH ACTIVE
-              </span>
-            )}
-            {isCharging && (
-              <span className="status-indicator charging">
-                ⚡ CHARGING
-              </span>
-            )}
-            <span className="speed-indicator">
-              {simulation.currentSpeed.toFixed(1)} m/s
-            </span>
-          </div>
+              )}
+              
+              {/* Planned Flight Path */}
+              {simulation.flightPath.length > 0 && simulation.flightPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
+                <Polyline
+                  positions={simulation.flightPath}
+                  pathOptions={{
+                    color: '#95a5a6',
+                    weight: 1,
+                    dashArray: '5, 5',
+                    opacity: 0.4
+                  }}
+                />
+              )}
+              
+              {/* Completed Path */}
+              {simulation.completedPath.length > 0 && simulation.completedPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
+                <Polyline
+                  positions={simulation.completedPath}
+                  pathOptions={{
+                    color: '#2ecc71',
+                    weight: 3,
+                    opacity: 0.8
+                  }}
+                />
+              )}
 
-          {/* Battery Warning Overlay */}
-          {simulation.battery <= 20 && !isCharging && (
-            <div className="battery-warning-overlay">
-              <span className={simulation.battery <= 10 ? 'critical' : 'warning'}>
-                ⚠️ {simulation.battery <= 10 ? 'CRITICAL' : 'LOW'} BATTERY: {simulation.battery.toFixed(0)}%
+              {/* RTH Path */}
+              {simulation.rthPath.length > 0 && simulation.rthPath.every(p => p && isFinite(p[0]) && isFinite(p[1])) && (
+                <Polyline
+                  positions={simulation.rthPath}
+                  pathOptions={{
+                    color: '#e74c3c',
+                    weight: 3,
+                    dashArray: '10, 5',
+                    opacity: 0.8
+                  }}
+                />
+              )}
+              
+              {/* Home Base Marker */}
+              {simulation.homePosition && isFinite(simulation.homePosition[0]) && isFinite(simulation.homePosition[1]) && (
+                <>
+                  <Marker position={simulation.homePosition} icon={homeIcon} />
+                  <Circle
+                    center={simulation.homePosition}
+                    radius={20}
+                    pathOptions={{
+                      color: '#3498db',
+                      fillColor: '#3498db',
+                      fillOpacity: 0.2
+                    }}
+                  />
+                </>
+              )}
+              
+              {/* Drone Marker */}
+              {simulation.position && isFinite(simulation.position[0]) && isFinite(simulation.position[1]) && (
+                <Marker 
+                  position={simulation.position} 
+                  icon={createDroneIcon(simulation.heading, isFlying)} 
+                />
+              )}
+            </MapContainer>
+            
+            {/* Status Overlay */}
+            <div className="simulation-overlay">
+              {isFlying && !isPaused && (
+                <span className="status-indicator running">
+                  🔴 LIVE
+                </span>
+              )}
+              {isPaused && (
+                <span className="status-indicator paused">
+                  ⏸️ PAUSED
+                </span>
+              )}
+              {isRTH && (
+                <span className="status-indicator rth">
+                  🏠 RTH ACTIVE
+                </span>
+              )}
+              {isCharging && (
+                <span className="status-indicator charging">
+                  ⚡ CHARGING
+                </span>
+              )}
+              <span className="speed-indicator">
+                {simulation.currentSpeed.toFixed(1)} m/s
               </span>
             </div>
-          )}
+
+            {/* Battery Warning Overlay */}
+            {simulation.battery <= 20 && !isCharging && (
+              <div className="battery-warning-overlay">
+                <span className={simulation.battery <= 10 ? 'critical' : 'warning'}>
+                  ⚠️ {simulation.battery <= 10 ? 'CRITICAL' : 'LOW'} BATTERY: {simulation.battery.toFixed(0)}%
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Controls Below Map */}
+          <div className="monitor-controls-bottom">
+            {/* Mission Type Selection */}
+            <div className="card">
+              <h3>Mission Type</h3>
+              <div className="mission-type-selector">
+                {Object.values(MissionType).map((type) => (
+                  <button
+                    key={type}
+                    className={`mission-type-btn ${simulation.selectedMissionType === type ? 'active' : ''}`}
+                    onClick={() => handleMissionTypeChange(type)}
+                    disabled={isFlying || isPaused}
+                  >
+                    {type === MissionType.GRID && '📐'}
+                    {type === MissionType.CROSSHATCH && '✖️'}
+                    {type === MissionType.PERIMETER && '🔲'}
+                    {type === MissionType.WAYPOINT && '📍'}
+                    {type === MissionType.HATCH && '⬔'}
+                    <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mission-type-description">
+                {simulation.selectedMissionType === MissionType.GRID && 'Horizontal lawn-mower pattern for efficient coverage'}
+                {simulation.selectedMissionType === MissionType.CROSSHATCH && 'Horizontal + vertical passes for double coverage'}
+                {simulation.selectedMissionType === MissionType.PERIMETER && 'Spiral inward from boundary for edge surveys'}
+                {simulation.selectedMissionType === MissionType.WAYPOINT && 'Direct point-to-point navigation'}
+                {simulation.selectedMissionType === MissionType.HATCH && 'Diagonal pattern at 45° for terrain coverage'}
+              </p>
+            </div>
+
+            {/* Speed Control */}
+            <div className="card">
+              <h3>Speed Control</h3>
+              <div className="speed-slider-container">
+                <input
+                  type="range"
+                  min="2"
+                  max="20"
+                  step="1"
+                  value={simulation.targetSpeed}
+                  onChange={(e) => handleSpeedChange(Number(e.target.value))}
+                  className="speed-slider"
+                />
+                <div className="speed-labels">
+                  <span>Slow</span>
+                  <span className="speed-value">{simulation.targetSpeed} m/s</span>
+                  <span>Fast</span>
+                </div>
+              </div>
+              <div className="speed-presets">
+                <button 
+                  className={`preset-btn ${simulation.targetSpeed === SpeedPresets.SLOW ? 'active' : ''}`}
+                  onClick={() => handleSpeedChange(SpeedPresets.SLOW)}
+                >
+                  🐢 Slow
+                </button>
+                <button 
+                  className={`preset-btn ${simulation.targetSpeed === SpeedPresets.NORMAL ? 'active' : ''}`}
+                  onClick={() => handleSpeedChange(SpeedPresets.NORMAL)}
+                >
+                  🚶 Normal
+                </button>
+                <button 
+                  className={`preset-btn ${simulation.targetSpeed === SpeedPresets.FAST ? 'active' : ''}`}
+                  onClick={() => handleSpeedChange(SpeedPresets.FAST)}
+                >
+                  🏃 Fast
+                </button>
+              </div>
+              <p className="speed-info">
+                Higher speed = faster mission but more battery drain
+              </p>
+            </div>
+
+            {/* Mission Control */}
+            <div className="card">
+              <h3>Mission Control</h3>
+              
+              {/* Debug Info */}
+              {!simulation.canFly && (
+                <div className="debug-info" style={{
+                  background: 'rgba(243, 156, 18, 0.2)',
+                  padding: '0.75rem',
+                  borderRadius: '6px',
+                  marginBottom: '0.75rem',
+                  fontSize: '0.8rem',
+                  color: '#f39c12'
+                }}>
+                  <div><strong>Debug Info:</strong></div>
+                  <div>Battery: {simulation.battery}%</div>
+                  <div>Flight Path: {simulation.flightPath?.length || 0} points</div>
+                  <div>Initialized: {simulation.isInitialized ? 'Yes' : 'No'}</div>
+                  <div>Can Fly: {simulation.canFly ? 'Yes' : 'No'}</div>
+                  <div>Drone State: {simulation.droneState}</div>
+                </div>
+              )}
+              
+              <div className="control-buttons">
+                {!isFlying && !isPaused && !isCharging ? (
+                  <button 
+                    className="btn btn-success btn-block btn-start-mission"
+                    onClick={simulation.start}
+                    disabled={!simulation.canFly}
+                    title={!simulation.canFly ? 'Check debug info above' : 'Start the mission simulation'}
+                  >
+                    ▶️ Start Mission
+                  </button>
+                ) : isCharging ? (
+                  <button className="btn btn-info btn-block" disabled>
+                    ⚡ Charging... {simulation.battery.toFixed(0)}%
+                  </button>
+                ) : (
+                  <>
+                    {isPaused ? (
+                      <button className="btn btn-success" onClick={simulation.resume}>
+                        ▶️ Resume
+                      </button>
+                    ) : (
+                      <button className="btn btn-warning" onClick={simulation.pause}>
+                        ⏸️ Pause
+                      </button>
+                    )}
+                    <button className="btn btn-danger" onClick={simulation.stop}>
+                      ⏹️ Abort
+                    </button>
+                  </>
+                )}
+              </div>
+              
+              {/* RTH Button */}
+              {(isFlying || isPaused) && !isRTH && (
+                <button 
+                  className="btn btn-rth btn-block"
+                  onClick={() => simulation.triggerRTH('manual')}
+                >
+                  🏠 Return to Home
+                </button>
+              )}
+
+              {/* Reset Button */}
+              {!isFlying && !isPaused && !isCharging && (
+                <button 
+                  className="btn btn-secondary btn-block"
+                  onClick={simulation.reset}
+                  style={{ marginTop: '0.5rem' }}
+                >
+                  🔄 Reset Simulation
+                </button>
+              )}
+
+              <p className="waypoint-count">
+                📍 {simulation.flightPath.length} waypoints
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
