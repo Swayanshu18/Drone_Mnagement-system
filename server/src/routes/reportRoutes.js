@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const reportService = require('../services/reportService');
-const authenticate = require('../middleware/auth.middleware');
 
-// Protect all routes
-router.use(authenticate);
+// No authentication required - public access
 
 /**
  * @route GET /api/reports/stats

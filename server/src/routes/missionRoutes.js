@@ -3,11 +3,8 @@ const router = express.Router();
 const missionService = require('../services/missionService');
 const Mission = require('../models/Mission');
 const missionControlService = require('../services/missionControlService');
-const authenticate = require('../middleware/auth.middleware');
-const requireRole = require('../middleware/role.middleware');
 
-// Protect all routes
-router.use(authenticate);
+// No authentication required - public access
 
 /**
  * @route GET /api/missions
@@ -45,13 +42,13 @@ router.get('/:id', async (req, res, next) => {
 /**
  * @route POST /api/missions
  * @desc Create new mission
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const missionData = {
       ...req.body,
-      created_by: req.user.id
+      created_by: 'public-user'
     };
     const mission = await missionService.createMission(missionData);
     res.status(201).json(mission);
@@ -63,9 +60,9 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res, next) => {
 /**
  * @route PUT /api/missions/:id
  * @desc Update mission configuration
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.put('/:id', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const mission = await missionService.updateMission(req.params.id, req.body);
     res.json(mission);
@@ -77,9 +74,9 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res, next) =>
 /**
  * @route POST /api/missions/:id/assign
  * @desc Assign drone to mission
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/:id/assign', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/:id/assign', async (req, res, next) => {
   try {
     const { drone_id } = req.body;
     if (!drone_id) {
@@ -99,9 +96,9 @@ router.post('/:id/assign', requireRole(['admin', 'operator']), async (req, res, 
 /**
  * @route DELETE /api/missions/:id
  * @desc Delete mission
- * @access Private/Admin
+ * @access Public
  */
-router.delete('/:id', requireRole(['admin']), async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const success = await Mission.delete(req.params.id);
     if (!success) {
@@ -118,11 +115,11 @@ router.delete('/:id', requireRole(['admin']), async (req, res, next) => {
 /**
  * @route POST /api/missions/:id/start
  * @desc Start mission
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/:id/start', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/:id/start', async (req, res, next) => {
   try {
-    const mission = await missionControlService.startMission(req.params.id, req.user.id);
+    const mission = await missionControlService.startMission(req.params.id, 'public-user');
     res.json(mission);
   } catch (error) {
     next(error);
@@ -132,11 +129,11 @@ router.post('/:id/start', requireRole(['admin', 'operator']), async (req, res, n
 /**
  * @route POST /api/missions/:id/pause
  * @desc Pause mission
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/:id/pause', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/:id/pause', async (req, res, next) => {
   try {
-    const mission = await missionControlService.pauseMission(req.params.id, req.user.id);
+    const mission = await missionControlService.pauseMission(req.params.id, 'public-user');
     res.json(mission);
   } catch (error) {
     next(error);
@@ -146,11 +143,11 @@ router.post('/:id/pause', requireRole(['admin', 'operator']), async (req, res, n
 /**
  * @route POST /api/missions/:id/resume
  * @desc Resume mission
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/:id/resume', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/:id/resume', async (req, res, next) => {
   try {
-    const mission = await missionControlService.resumeMission(req.params.id, req.user.id);
+    const mission = await missionControlService.resumeMission(req.params.id, 'public-user');
     res.json(mission);
   } catch (error) {
     next(error);
@@ -160,12 +157,12 @@ router.post('/:id/resume', requireRole(['admin', 'operator']), async (req, res, 
 /**
  * @route POST /api/missions/:id/abort
  * @desc Abort mission
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/:id/abort', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/:id/abort', async (req, res, next) => {
   try {
     const { reason } = req.body;
-    const mission = await missionControlService.abortMission(req.params.id, req.user.id, reason);
+    const mission = await missionControlService.abortMission(req.params.id, 'public-user', reason);
     res.json(mission);
   } catch (error) {
     next(error);

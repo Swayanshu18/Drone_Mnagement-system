@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const Site = require('../models/Site');
-const authenticate = require('../middleware/auth.middleware');
-const requireRole = require('../middleware/role.middleware');
 
-// Protect all routes
-router.use(authenticate);
+// No authentication required - public access
 
 /**
  * @route GET /api/sites
@@ -43,9 +40,9 @@ router.get('/:id', async (req, res, next) => {
 /**
  * @route POST /api/sites
  * @desc Create new site
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const site = await Site.create(req.body);
     res.status(201).json(site);
@@ -57,9 +54,9 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res, next) => {
 /**
  * @route PUT /api/sites/:id
  * @desc Update site
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.put('/:id', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const site = await Site.update(req.params.id, req.body);
     if (!site) {
@@ -76,9 +73,9 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res, next) =>
 /**
  * @route DELETE /api/sites/:id
  * @desc Delete site
- * @access Private/Admin
+ * @access Public
  */
-router.delete('/:id', requireRole(['admin']), async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     const success = await Site.delete(req.params.id);
     if (!success) {

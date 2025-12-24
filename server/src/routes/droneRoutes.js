@@ -1,11 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const fleetService = require('../services/fleetService');
-const authenticate = require('../middleware/auth.middleware');
-const requireRole = require('../middleware/role.middleware');
 
-// Protect all routes
-router.use(authenticate);
+// No authentication required - public access
 
 /**
  * @route GET /api/drones
@@ -42,9 +39,9 @@ router.get('/:id', async (req, res, next) => {
 /**
  * @route POST /api/drones
  * @desc Register new drone
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.post('/', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const drone = await fleetService.registerDrone(req.body);
     res.status(201).json(drone);
@@ -56,9 +53,9 @@ router.post('/', requireRole(['admin', 'operator']), async (req, res, next) => {
 /**
  * @route PUT /api/drones/:id
  * @desc Update drone details
- * @access Private/Admin/Operator
+ * @access Public
  */
-router.put('/:id', requireRole(['admin', 'operator']), async (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const drone = await fleetService.updateDrone(req.params.id, req.body);
     res.json(drone);
@@ -70,9 +67,9 @@ router.put('/:id', requireRole(['admin', 'operator']), async (req, res, next) =>
 /**
  * @route DELETE /api/drones/:id
  * @desc Decommission drone
- * @access Private/Admin
+ * @access Public
  */
-router.delete('/:id', requireRole(['admin']), async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
     await fleetService.removeDrone(req.params.id);
     res.status(204).send();

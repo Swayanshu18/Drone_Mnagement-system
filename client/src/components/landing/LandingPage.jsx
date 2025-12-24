@@ -6,7 +6,6 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
 import droneBg from '../../assets/drone-bg.jpg';
 import logo from '../../assets/logo.png';
 import './LandingPage.css';
@@ -43,14 +42,7 @@ const stats = [
 
 function LandingPage() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
-  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -80,7 +72,7 @@ function LandingPage() {
           <a href="#stats">Stats</a>
           <a href="#about">About</a>
         </div>
-        <button className="nav-cta glass-btn" onClick={() => navigate('/login')}>
+        <button className="nav-cta glass-btn" onClick={() => navigate('/dashboard')}>
           Get Started
         </button>
       </nav>
@@ -98,11 +90,11 @@ function LandingPage() {
             Plan missions, monitor flights in real-time, and generate comprehensive survey reports.
           </p>
           <div className="hero-buttons">
-            <button className="btn-primary-glass" onClick={() => navigate('/login')}>
+            <button className="btn-primary-glass" onClick={() => navigate('/dashboard')}>
               Start Free Trial
               <span className="btn-arrow">→</span>
             </button>
-            <button className="btn-secondary-glass" onClick={() => navigate('/login')}>
+            <button className="btn-secondary-glass" onClick={() => navigate('/dashboard')}>
               Watch Demo
             </button>
           </div>
@@ -155,7 +147,7 @@ function LandingPage() {
           <p className="cta-description">
             Join hundreds of professionals using DroneSurvey for their aerial mapping needs.
           </p>
-          <button className="btn-primary-glass large" onClick={() => navigate('/login')}>
+          <button className="btn-primary-glass large" onClick={() => navigate('/dashboard')}>
             Get Started Now
             <span className="btn-arrow">→</span>
           </button>

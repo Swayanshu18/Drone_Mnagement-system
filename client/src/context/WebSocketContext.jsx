@@ -6,7 +6,6 @@
 
 import { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
-import { useAuth } from '../hooks/useAuth';
 
 export const WebSocketContext = createContext(null);
 
@@ -18,29 +17,14 @@ export function WebSocketProvider({ children }) {
   const socketRef = useRef(null);
   const listenersRef = useRef(new Map());
 
-  const { user, isAuthenticated } = useAuth();
-
-  // Initialize socket connection
+  // Initialize socket connection (no auth required)
   useEffect(() => {
-    const token = localStorage.getItem('token');
-
-    // Only connect if we have a token AND user is authenticated
-    if (!token || !isAuthenticated) {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
-      return;
-    }
-
     // Disconnect existing socket before creating new one
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
 
     socketRef.current = io(SOCKET_URL, {
-      auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: 5,
@@ -58,10 +42,7 @@ export function WebSocketProvider({ children }) {
     });
 
     socketRef.current.on('connect_error', (error) => {
-      // Only log if it's not an auth error (expected when not logged in)
-      if (!error.message.includes('Authentication')) {
-        console.error('WebSocket connection error:', error);
-      }
+      console.error('WebSocket connection error:', error);
       setIsConnected(false);
     });
 
@@ -82,7 +63,7 @@ export function WebSocketProvider({ children }) {
         socketRef.current.disconnect();
       }
     };
-  }, [user, isAuthenticated]);
+  }, []); // Only run once on mount
 
   // Subscribe to an event
   const subscribe = useCallback((event, callback) => {

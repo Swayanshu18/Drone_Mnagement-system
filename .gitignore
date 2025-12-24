@@ -61,6 +61,7 @@ R.jpg
 
 # Development/Debug Documentation (keep only main docs)
 ANIMATION_FIX.md
+AUTHENTICATION_REMOVAL.md
 BATTERY_SYSTEM_EXPLAINED.md
 CIRCULAR_DEPENDENCY_FIX.md
 FLIGHT_PATTERNS.md

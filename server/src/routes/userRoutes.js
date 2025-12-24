@@ -1,24 +1,21 @@
 /**
  * User Management Routes
  * 
- * Admin-only routes for managing users.
+ * Public routes for managing users.
  */
 
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const authenticate = require('../middleware/auth.middleware');
-const requireRole = require('../middleware/role.middleware');
 
-// Protect all routes - require authentication
-router.use(authenticate);
+// No authentication required - public access
 
 /**
  * @route GET /api/users
  * @desc Get all users
- * @access Private/Admin
+ * @access Public
  */
-router.get('/', requireRole(['admin']), async (req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
     const users = await User.findAll();
     res.json(users);
@@ -30,9 +27,9 @@ router.get('/', requireRole(['admin']), async (req, res, next) => {
 /**
  * @route POST /api/users
  * @desc Create a new user
- * @access Private/Admin
+ * @access Public
  */
-router.post('/', requireRole(['admin']), async (req, res, next) => {
+router.post('/', async (req, res, next) => {
   try {
     const { email, password, name, role } = req.body;
 
@@ -69,9 +66,9 @@ router.post('/', requireRole(['admin']), async (req, res, next) => {
 /**
  * @route GET /api/users/:id
  * @desc Get user by ID
- * @access Private/Admin
+ * @access Public
  */
-router.get('/:id', requireRole(['admin']), async (req, res, next) => {
+router.get('/:id', async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -88,9 +85,9 @@ router.get('/:id', requireRole(['admin']), async (req, res, next) => {
 /**
  * @route PUT /api/users/:id
  * @desc Update user
- * @access Private/Admin
+ * @access Public
  */
-router.put('/:id', requireRole(['admin']), async (req, res, next) => {
+router.put('/:id', async (req, res, next) => {
   try {
     const { email, name, role, password } = req.body;
 
@@ -144,17 +141,10 @@ router.put('/:id', requireRole(['admin']), async (req, res, next) => {
 /**
  * @route DELETE /api/users/:id
  * @desc Delete user
- * @access Private/Admin
+ * @access Public
  */
-router.delete('/:id', requireRole(['admin']), async (req, res, next) => {
+router.delete('/:id', async (req, res, next) => {
   try {
-    // Prevent self-deletion
-    if (req.params.id === req.user.id) {
-      const error = new Error('Cannot delete your own account');
-      error.statusCode = 400;
-      throw error;
-    }
-
     const success = await User.delete(req.params.id);
     if (!success) {
       const error = new Error('User not found');

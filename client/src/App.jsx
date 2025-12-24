@@ -5,7 +5,6 @@
  */
 
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
 
 // Layout
 import DashboardLayout from './components/dashboard/DashboardLayout';
@@ -13,50 +12,22 @@ import DashboardLayout from './components/dashboard/DashboardLayout';
 // Landing page
 import LandingPage from './components/landing/LandingPage';
 
-// Auth pages
-import LoginForm from './components/auth/LoginForm';
-
 // Dashboard pages
 import FleetDashboard from './components/fleet/FleetDashboard';
-import MissionList from './components/mission/MissionList';
-import MissionPlanner from './components/mission/MissionPlanner';
-import MissionMonitor from './components/mission/MissionMonitor';
+import MissionList from './components/missions/MissionList';
+import MissionPlanner from './components/missions/MissionPlanner';
+import MissionMonitor from './components/missions/MissionMonitor';
 import ReportsDashboard from './components/reports/ReportsDashboard';
 import UserManagement from './components/users/UserManagement';
 
-// Protected Route wrapper
-import ProtectedRoute from './components/auth/ProtectedRoute';
-
 function App() {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-spinner"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
   return (
     <Routes>
-      {/* Public routes */}
+      {/* Public routes - Landing page */}
       <Route path="/" element={<LandingPage />} />
-      <Route
-        path="/login"
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />}
-      />
 
-      {/* Protected routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
+      {/* Dashboard routes - No authentication required */}
+      <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<Navigate to="fleet" replace />} />
         <Route path="fleet" element={<FleetDashboard />} />
         <Route path="missions" element={<MissionList />} />
